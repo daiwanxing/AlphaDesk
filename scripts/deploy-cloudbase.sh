@@ -12,28 +12,49 @@ MODE="${1:-all}" # all | hosting | functions
 
 HTTP_FNS=(get-events get-briefs trigger-backfill)
 EVENT_FNS=(detect-new-materials generate-brief)
+ALL_FNS=("${HTTP_FNS[@]}" "${EVENT_FNS[@]}")
+
+# Prefer zip for small packages (avoids flaky COS upload timeout in CI).
+# Falls back to cos with retries if zip fails (e.g. >1.5MB).
+update_function_code() {
+  local fn="$1"
+  local attempt
+  echo "---- tcb fn code update $fn (zip) ----"
+  if tcb fn code update "$fn" --env-id "$ENV_ID" --deployMode zip --yes; then
+    return 0
+  fi
+  echo "zip update failed for $fn; retrying with cos..."
+  for attempt in 1 2 3; do
+    echo "---- tcb fn code update $fn (cos attempt $attempt) ----"
+    if tcb fn code update "$fn" --env-id "$ENV_ID" --deployMode cos --yes; then
+      return 0
+    fi
+    sleep $((attempt * 5))
+  done
+  return 1
+}
 
 deploy_functions() {
   echo "==> Build cloud functions (TypeScript → index.js)"
   pnpm cf:build
 
-  echo "==> Install production deps where package.json has dependencies"
-  for fn in get-briefs trigger-backfill generate-brief detect-new-materials; do
-    pkg="$CF_ROOT/$fn/package.json"
-    if [[ -f "$pkg" ]] && grep -q '"dependencies"' "$pkg"; then
-      echo "    npm install --omit=dev ($fn)"
-      (cd "$CF_ROOT/$fn" && npm install --omit=dev --no-fund --no-audit)
-    fi
-  done
+  # Do NOT upload node_modules: keep packages small for --deployMode zip.
+  # Cloud runtime installs from each function's package.json (installDependency).
+  echo "==> Skipping local npm install in function dirs (cloud installs deps)"
 
-  # Functions already exist in env — do NOT pass --httpFn on update
-  # (type is locked; --httpFn can break updates). scf_bootstrap stays in the package.
-  echo "==> Deploy functions → $ENV_ID (dir: cloudfunctions)"
-  for fn in "${HTTP_FNS[@]}" "${EVENT_FNS[@]}"; do
-    echo "---- tcb fn deploy $fn ----"
-    if ! tcb fn deploy "$fn" --dir "$CF_ROOT" --env-id "$ENV_ID" --yes --force; then
-      echo "::error::Failed deploying function: $fn"
-      echo "---- tcb fn detail $fn (best effort) ----"
+  echo "==> Ensure no stray node_modules under cloudfunctions (zip size)"
+  find "$CF_ROOT" -type d -name node_modules -prune -exec rm -rf {} + 2>/dev/null || true
+
+  echo "==> Update function code → $ENV_ID (functionRoot=cloudfunctions)"
+  for fn in "${ALL_FNS[@]}"; do
+    if [[ ! -f "$CF_ROOT/$fn/index.js" ]]; then
+      echo "::error::Missing $CF_ROOT/$fn/index.js — run pnpm cf:build"
+      exit 1
+    fi
+    # Show package size hint
+    du -sh "$CF_ROOT/$fn" || true
+    if ! update_function_code "$fn"; then
+      echo "::error::Failed updating function code: $fn"
       tcb fn detail "$fn" --env-id "$ENV_ID" || true
       exit 1
     fi
