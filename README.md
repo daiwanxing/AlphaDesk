@@ -38,6 +38,60 @@ pnpm deploy:cloudbase
 
 **本地开发：** `.env.local` 中 `VITE_CLOUDBASE_*` 留空时，时间线走 Vite `/api` 中间件；也可填云端 URL 或配合同源代理 `/cloudbase-events`。
 
+## CI/CD（GitHub → CloudBase）
+
+当前分支约定：
+
+| 分支     | 用途                                                         |
+| -------- | ------------------------------------------------------------ |
+| `main`   | 日常开发与合并                                               |
+| `deploy` | 生产发布分支；**push / merge 到此分支**会触发 GitHub Actions |
+
+工作流文件：[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+
+流水线会：`pnpm build:cloudbase` → 编译云函数 → `tcb hosting deploy` + `tcb fn deploy`（HTTP / Event）。
+
+### 1. 创建 GitHub 仓库并推送
+
+```bash
+# 在 GitHub 上新建空仓库后：
+git remote add origin git@github.com:<你的账号>/investor.git
+git push -u origin main
+git branch deploy
+git push -u origin deploy
+```
+
+### 2. 配置 Secrets
+
+仓库 **Settings → Secrets and variables → Actions** 添加：
+
+| Secret               | 说明                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `TCB_SECRET_ID`      | 腾讯云 API 密钥 SecretId（[CAM 密钥](https://console.cloud.tencent.com/cam/capi)） |
+| `TCB_SECRET_KEY`     | 腾讯云 API 密钥 SecretKey                                                          |
+| `VITE_BRIEF_API_KEY` | 与云函数 `BRIEF_API_KEY` 一致（会打进前端包，仅单用户可接受）                      |
+
+参考：[CloudBase CI/CD 文档](https://docs.cloudbase.net/hosting/cli-devops)
+
+### 3. 发布流程
+
+```bash
+# 在 main 完成开发并提交后：
+git checkout deploy
+git merge main
+git push origin deploy   # 触发 Deploy CloudBase workflow
+```
+
+或在 GitHub 上开 PR：`main` → `deploy`，合并后同样触发。
+
+### 4. 本地手动部署（可选）
+
+```bash
+# 需已 tcb login，并准备好生产 env
+cp .env.production.cloudbase.example .env.production.local
+pnpm deploy:cloudbase   # = build:cloudbase + scripts/deploy-cloudbase.sh
+```
+
 ## 数据来源（公开）
 
 | 数据               | 来源                                                                               |

@@ -18,7 +18,7 @@
     "cf:clean": "node scripts/build-cloudfunctions.mjs clean",
     "cf:typecheck": "tsc -p cloudfunctions/tsconfig.json --noEmit",
     "build:cloudbase": "vite build --mode production",
-    "deploy:cloudbase": "pnpm build:cloudbase && tcb hosting deploy dist -e trader-d4gl4d7a1cb6baebb",
+    "deploy:cloudbase": "pnpm build:cloudbase && bash scripts/deploy-cloudbase.sh",
     "prepare": "husky"
   },
   "dependencies": {

@@ -1,0 +1,59 @@
+# Deploy to CloudBase when code lands on the `deploy` branch
+# (merge main → deploy, or push directly to deploy).
+#
+# Docs: https://docs.cloudbase.net/hosting/cli-devops
+name: Deploy CloudBase
+
+on:
+  push:
+    branches: [deploy]
+
+concurrency:
+  group: cloudbase-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build & deploy (hosting + functions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      TCB_ENV_ID: trader-d4gl4d7a1cb6baebb
+      VITE_CLOUDBASE_EVENTS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-events
+      VITE_CLOUDBASE_BRIEFS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-briefs
+      VITE_CLOUDBASE_BACKFILL_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/trigger-backfill
+      VITE_BRIEF_API_KEY: ${{ secrets.VITE_BRIEF_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.13.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (Vite production)
+        run: pnpm build:cloudbase
+
+      - name: Install CloudBase CLI
+        run: npm install -g @cloudbase/cli
+
+      - name: Login CloudBase (CI)
+        run: tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+
+      - name: Deploy hosting + cloud functions
+        run: bash scripts/deploy-cloudbase.sh
