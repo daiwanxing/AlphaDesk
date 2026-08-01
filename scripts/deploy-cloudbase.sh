@@ -8,40 +8,60 @@ cd "$ROOT"
 
 ENV_ID="${TCB_ENV_ID:-trader-d4gl4d7a1cb6baebb}"
 CF_ROOT="$ROOT/cloudfunctions"
+MODE="${1:-all}" # all | hosting | functions
 
 HTTP_FNS=(get-events get-briefs trigger-backfill)
 EVENT_FNS=(detect-new-materials generate-brief)
 
-echo "==> Build cloud functions (TypeScript → index.js)"
-pnpm cf:build
+deploy_functions() {
+  echo "==> Build cloud functions (TypeScript → index.js)"
+  pnpm cf:build
 
-echo "==> Install production deps for HTTP functions that need them"
-for fn in get-briefs trigger-backfill generate-brief detect-new-materials; do
-  pkg="$CF_ROOT/$fn/package.json"
-  if [[ -f "$pkg" ]] && grep -q '"dependencies"' "$pkg"; then
-    echo "    npm install --omit=dev ($fn)"
-    (cd "$CF_ROOT/$fn" && npm install --omit=dev --no-fund --no-audit)
+  echo "==> Install production deps where package.json has dependencies"
+  for fn in get-briefs trigger-backfill generate-brief detect-new-materials; do
+    pkg="$CF_ROOT/$fn/package.json"
+    if [[ -f "$pkg" ]] && grep -q '"dependencies"' "$pkg"; then
+      echo "    npm install --omit=dev ($fn)"
+      (cd "$CF_ROOT/$fn" && npm install --omit=dev --no-fund --no-audit)
+    fi
+  done
+
+  # Functions already exist in env — do NOT pass --httpFn on update
+  # (type is locked; --httpFn can break updates). scf_bootstrap stays in the package.
+  echo "==> Deploy functions → $ENV_ID"
+  for fn in "${HTTP_FNS[@]}" "${EVENT_FNS[@]}"; do
+    echo "---- tcb fn deploy $fn ----"
+    if ! tcb fn deploy "$fn" --env-id "$ENV_ID" --yes --force; then
+      echo "::error::Failed deploying function: $fn"
+      echo "---- tcb fn detail $fn (best effort) ----"
+      tcb fn detail "$fn" --env-id "$ENV_ID" || true
+      exit 1
+    fi
+  done
+}
+
+deploy_hosting() {
+  echo "==> Deploy static hosting (./dist) → $ENV_ID"
+  if [[ ! -d dist ]]; then
+    echo "error: dist/ missing; run pnpm build:cloudbase first" >&2
+    exit 1
   fi
-done
+  ls -la dist | head -20
+  tcb hosting deploy ./dist --env-id "$ENV_ID" --yes
+}
 
-echo "==> Deploy HTTP functions → $ENV_ID"
-for fn in "${HTTP_FNS[@]}"; do
-  echo "    tcb fn deploy $fn --httpFn"
-  tcb fn deploy "$fn" --httpFn --env-id "$ENV_ID" --yes
-done
+case "$MODE" in
+  functions) deploy_functions ;;
+  hosting) deploy_hosting ;;
+  all)
+    deploy_functions
+    deploy_hosting
+    ;;
+  *)
+    echo "usage: $0 [all|hosting|functions]" >&2
+    exit 2
+    ;;
+esac
 
-echo "==> Deploy Event functions → $ENV_ID"
-for fn in "${EVENT_FNS[@]}"; do
-  echo "    tcb fn deploy $fn"
-  tcb fn deploy "$fn" --env-id "$ENV_ID" --yes
-done
-
-echo "==> Deploy static hosting (./dist) → $ENV_ID"
-if [[ ! -d dist ]]; then
-  echo "error: dist/ missing; run pnpm build:cloudbase first" >&2
-  exit 1
-fi
-tcb hosting deploy ./dist --env-id "$ENV_ID" --yes
-
-echo "==> Done"
+echo "==> Done ($MODE)"
 echo "    Site: https://${ENV_ID}-1301814349.tcloudbaseapp.com/"

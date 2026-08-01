@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 30
 
     env:
+      CI: "true"
       TCB_ENV_ID: trader-d4gl4d7a1cb6baebb
       VITE_CLOUDBASE_EVENTS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-events
       VITE_CLOUDBASE_BRIEFS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-briefs
@@ -56,23 +57,22 @@ jobs:
 
       # Must use API key login. Empty secrets make CLI fall back to browser/device auth (hangs in Actions).
       # Docs: https://docs.cloudbase.net/hosting/cli-devops
-      #       https://docs.cloudbase.net/framework/ci
       - name: Login CloudBase (CI)
         env:
-          CI: "true"
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
           TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
         run: |
           set -euo pipefail
           if [ -z "${TCB_SECRET_ID}" ] || [ -z "${TCB_SECRET_KEY}" ]; then
             echo "::error::Missing secrets TCB_SECRET_ID / TCB_SECRET_KEY for environment ENV."
-            echo "They must be Environment secrets (not only Repository secrets),"
-            echo "and this job must set environment: ENV."
             exit 1
           fi
           tcb login --apiKeyId "${TCB_SECRET_ID}" --apiKey "${TCB_SECRET_KEY}" --yes
+          echo "Login ok; listing functions (sanity check)"
+          tcb fn list --env-id "${TCB_ENV_ID}" || true
 
-      - name: Deploy hosting + cloud functions
-        env:
-          CI: "true"
-        run: bash scripts/deploy-cloudbase.sh
+      - name: Deploy cloud functions
+        run: bash scripts/deploy-cloudbase.sh functions
+
+      - name: Deploy static hosting
+        run: bash scripts/deploy-cloudbase.sh hosting
