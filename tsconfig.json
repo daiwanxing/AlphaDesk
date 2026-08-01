@@ -2,7 +2,6 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "./cloudfunctions" }
+    { "path": "./tsconfig.node.json" }
   ]
 }

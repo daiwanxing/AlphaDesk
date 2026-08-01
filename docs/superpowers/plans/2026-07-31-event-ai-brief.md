@@ -4,7 +4,7 @@
 
 **Goal:** 在现有事件追踪详情页上增加 AI 解读层：材料可用后由 CloudBase 窗口驱动检测 → 生成一次入库；前端只读展示（三层并列）。
 
-**Architecture:** 时间线仍由 Vite/Vercel（`server/lib/*` + `api/events*`）提供；CloudBase 文档库存 `briefs`/`jobs`，Event Functions 负责 `detect-new-materials` / `generate-brief`，HTTP Function `get-briefs` 供前端只读。检测采用窗口加密 + 日常兜底（非全年无差别高频爬取）。
+**Architecture:** 全栈腾讯云 CloudBase。时间线由 HTTP Function `get-events`（逻辑源 `server/lib/*`，本地 Vite middleware 同源）提供；静态前端托管在 CloudBase Hosting。文档库存 `briefs`/`jobs`，Event Functions 负责 `detect-new-materials` / `generate-brief`，HTTP Function `get-briefs` / `trigger-backfill` 供前端。检测采用窗口加密 + 日常兜底（非全年无差别高频爬取）。**不再使用 Vercel。**
 
 **Tech Stack:** React 19 + Vite 8（现有前端）、CloudBase 云函数（**TypeScript**，由现有构建链部署时编译）+ 文档型数据库 + `@cloudbase/node-sdk` AI、Vitest（纯逻辑单测）。
 
@@ -22,21 +22,24 @@
 
 | Path | Responsibility |
 |------|----------------|
+| `cloudfunctions/get-events/` | HTTP Function：时间线列表与事件详情（bundle `server/api` + `server/lib`） |
 | `cloudfunctions/get-briefs/` | HTTP Function：只读 briefs |
 | `cloudfunctions/detect-new-materials/` | Event Function：窗口检测 + 入队 |
 | `cloudfunctions/generate-brief/` | Event Function：claim → 抓文 → LLM → 写 briefs |
 | `cloudfunctions/trigger-backfill/` | HTTP Function：鉴权后对指定 `year` 触发 `detect-new-materials` backfill |
 | `cloudfunctions/_shared/` | `.ts` 共享：窗口计算、幂等、退避、prompt、DB helpers |
 | `src/features/event-track/briefs.ts` | 槽位补全 + 产品状态合成（纯函数） |
-| `src/features/event-track/api.ts` | 增加 `fetchBriefs` |
+| `src/features/event-track/api.ts` | `fetchTimeline` / `fetchBriefs` / `requestBriefBackfill` |
 | `src/features/event-track/types.ts` | Brief 类型 |
 | `src/features/event-track/components/AiBriefPanel.tsx` | AI 区 UI（占位/撰写中/就绪/失败） |
 | `src/routes/events/$eventId.tsx` | 并入三层 |
 | `src/features/event-track/briefs.test.ts` | 状态合成单测 |
 | `cloudfunctions/_shared/windows.test.ts` 或 `server/lib/detect-windows.test.ts` | 窗口模式单测（可放仓库根 `src`/`server` 便于 vitest） |
 | `server/lib/detect-windows.ts` | 窗口/模式纯逻辑（可被云函数复制或构建时打包） |
-| `.env.example` | `VITE_CLOUDBASE_BRIEFS_URL` 等 |
-| `README.md` | CloudBase 部署说明一小段 |
+| `server/api/middleware.ts` | 本地 `pnpm dev` 时间线（不部署到云） |
+| `.env.example` / `.env.production.cloudbase.example` | `VITE_CLOUDBASE_EVENTS_URL` 等 |
+| `cloudbaserc.json` | 静态托管根目录 `dist/` |
+| `README.md` | CloudBase 部署说明 |
 
 ### CloudFunctions TypeScript 约定
 
@@ -358,7 +361,7 @@ Expected: 中文标准块齐全。已验证：`earnings-GOOGL-000165204426000071
 
 - [x] **Step 1: 实现模式分支**
 
-1. **默认移植**仓库 `server/lib/sec.ts`、`nasdaq.ts`、`fed.ts`、`constants.ts` 的逻辑进云函数（或共享打包），在函数内拉日程与材料链接；**不要**依赖本机 Vite middleware，也勿假设 Vercel URL 在云函数内一定可达  
+1. **默认移植**仓库 `server/lib/sec.ts`、`nasdaq.ts`、`fed.ts`、`constants.ts` 的逻辑进云函数（或共享打包），在函数内拉日程与材料链接；**不要**依赖本机 Vite middleware；时间线读路径走同环境 `get-events`，勿假设外部第三方托管 URL 在云函数内一定可达   
 2. 计算活跃窗口 → `resolveDetectMode`（与 `server/lib/detect-windows.ts` 行为一致）  
 3. `idle` → 立即 `{ earlyExit: true }`（新鲜 `pipeline_meta.scheduleByYear` 缓存命中时**不**打外部 HTTP）  
 4. `dense`/`daily`/`backfill` → 对比指纹；缺口入队；SEP 无则 `not_applicable`  
@@ -465,3 +468,4 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 | 2026-07-31 | 审阅修订：`pipeline_meta` 必建；补 `trigger-backfill` HTTP + 前端切年；detect 默认移植 server/lib |
 | 2026-07-31 | 再审：失败写 `failed` 再耗尽；trigger-backfill 补齐 HTTP 文件；验收 #9；fixture section ids |
 | 2026-07-31 | 云函数统一 **TypeScript**（`.ts`）；删除 JS+CJS 默认；新增 CloudFunctions TS 约定 |
+| 2026-08-01 | 架构改为全栈 CloudBase：新增 `get-events`、静态托管前端；移除 Vite/Vercel 时间线部署假设 |

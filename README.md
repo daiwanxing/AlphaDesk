@@ -6,10 +6,37 @@
 
 ```bash
 pnpm install
-pnpm dev          # 本地：Vite + /api 中间件
-vercel dev        # 本地：模拟 Vercel（含 serverless API）
-vercel deploy     # 部署到 Vercel（静态 + /api）
+pnpm dev          # 本地：Vite + /api 中间件（时间线）；CloudBase URL 可留空
 ```
+
+## 部署（全栈 CloudBase）
+
+| 组件 | CloudBase |
+|------|-----------|
+| 静态前端 | 静态网站托管 |
+| 时间线 `get-events` | HTTP 云函数 |
+| AI 简报 / backfill | HTTP / 事件云函数 |
+
+**1. 编译并上传云函数**
+
+```bash
+pnpm cf:build
+# 在 CloudBase 控制台或使用 CLI 上传 cloudfunctions/get-events 等目录
+```
+
+**2. 构建并部署静态站**
+
+```bash
+cp .env.production.cloudbase.example .env.production.local
+# 编辑 .env.production.local（填入 BRIEF_API_KEY 等）
+pnpm deploy:cloudbase
+```
+
+静态站默认域名：`https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com`
+
+控制台：[静态网站托管](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/static-hosting) · [云函数](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/scf)
+
+**本地开发：** `.env.local` 中 `VITE_CLOUDBASE_*` 留空时，时间线走 Vite `/api` 中间件；也可填云端 URL 或配合同源代理 `/cloudbase-events`。
 
 ## 数据来源（公开）
 
@@ -27,8 +54,8 @@ vercel deploy     # 部署到 Vercel（静态 + /api）
 
 ## 说明
 
-- 本原型为 **初步效果演示**；生产可用 `vercel deploy` 部署（`api/` + `dist/`）
-- `pnpm preview` 仅静态前端；数据 API 需 `pnpm dev` 或 Vercel 部署
+- 本原型为 **初步效果演示**；生产部署在腾讯云 CloudBase（静态站 + 云函数）
+- `pnpm preview` 仅静态前端；时间线 API 需 `pnpm dev` 或已部署的 `get-events` 云函数
 
 ## 技术栈
 
@@ -64,6 +91,8 @@ pnpm lint            # Oxlint
 pnpm lint:fix       # Oxlint 自动修复
 pnpm format          # Oxfmt 格式化
 pnpm format:check    # 检查格式是否符合规范
+pnpm cf:build        # 编译云函数 .ts → .js
+pnpm deploy:cloudbase # 构建并上传静态站到 CloudBase
 ```
 
 ## 目录
@@ -73,6 +102,8 @@ src/routes/          # 文件路由（薄）
 src/features/        # 业务域竖切
 src/stores/          # Zustand
 src/shared/          # 跨域复用
+server/              # 时间线逻辑（本地中间件 + 云函数 bundle 源）
+cloudfunctions/      # CloudBase 云函数（TypeScript 源码）
 src/test/            # 入口 / 集成测试
 docs/                # 设计文档
 ```

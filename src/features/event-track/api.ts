@@ -8,8 +8,26 @@ async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+function eventsBase(): string {
+  const base = import.meta.env.VITE_CLOUDBASE_EVENTS_URL as string | undefined;
+  return base?.replace(/\/$/, "") ?? "";
+}
+
+function timelineListUrl(year: number): string {
+  const base = eventsBase();
+  if (base) return `${base}?year=${year}`;
+  return `/api/events?year=${year}`;
+}
+
+function timelineDetailUrl(year: number, id: string): string {
+  const base = eventsBase();
+  const encoded = encodeURIComponent(id);
+  if (base) return `${base}/${encoded}?year=${year}`;
+  return `/api/events/${encoded}?year=${year}`;
+}
+
 export async function fetchTimeline(year: number): Promise<TimelineResponse> {
-  const res = await fetch(`/api/events?year=${year}`);
+  const res = await fetch(timelineListUrl(year));
   return parseJson<TimelineResponse>(res);
 }
 
@@ -17,7 +35,7 @@ export async function fetchEventDetail(
   year: number,
   id: string,
 ): Promise<EventDetailResponse> {
-  const res = await fetch(`/api/events/${encodeURIComponent(id)}?year=${year}`);
+  const res = await fetch(timelineDetailUrl(year, id));
   return parseJson<EventDetailResponse>(res);
 }
 

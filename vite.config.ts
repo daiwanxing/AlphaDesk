@@ -44,6 +44,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/cloudbase-backfill/, "/trigger-backfill"),
       },
+      "/cloudbase-events": {
+        target: "https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/cloudbase-events/, "/get-events"),
+      },
     },
   },
   test: {

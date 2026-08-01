@@ -1,0 +1,6 @@
+{
+  "name": "get-events",
+  "version": "1.0.0",
+  "description": "事件时间线 HTTP 接口（SEC / Nasdaq / Fed）",
+  "main": "index.js"
+}

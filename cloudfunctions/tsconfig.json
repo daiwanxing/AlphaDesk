@@ -9,9 +9,11 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "composite": true,
+    "verbatimModuleSyntax": false,
     "noEmit": true,
     "rootDir": ".",
     "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.cloudfunctions.tsbuildinfo"
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": ["./get-events/**"]
 }

@@ -14,7 +14,7 @@
 
 - **写路径（生成）：** CloudBase **窗口驱动检测**（临近披露/会议加密 + 日常低频兜底）→ 入队 → 抓原文 → LLM → 写入数据库   
 - **读路径（展示）：** 详情页只读已存 `briefs`，**禁止**因 HTTP 请求同步调 LLM  
-- **现有能力：** Vercel / Vite 侧的事件时间线（SEC / Nasdaq / Fed）可继续负责「事件列表与固定信息」；CloudBase 专责「摘要持久化与生成管线」
+- **全栈 CloudBase：** 静态前端、时间线 API、AI 管线均在腾讯云 CloudBase；逻辑源码仍在仓库 `server/lib/*`（本地 Vite middleware 与云函数 `get-events` 共用）
 
 ### 1.2 逻辑流
 
@@ -29,22 +29,26 @@
     → CloudBase AI generateText
     → 写 briefs（ready）或 jobs（failed + 退避）
 
+[HTTP] get-events
+    → 按 year 返回时间线 / 按 eventId 返回固定信息（SEC / Nasdaq / Fed）
+
 [HTTP] get-briefs
     → 按 eventId 返回 briefs[]（只读）
     → 前端与固定信息、官方链接三层并列渲染
 ```
 
-### 1.3 部署边界（建议）
+### 1.3 部署边界（现行）
 
 | 组件 | 放哪 | 职责 |
 |------|------|------|
-| 时间线 API | 现有 Vercel `api/events*` 或本地 Vite middleware | 事件列表、固定信息、官方 URL |
+| 前端 | CloudBase **静态网站托管**（Vite `dist/`） | 详情页合并两路数据；SPA 404 → `index.html` |
+| 时间线 API | CloudBase HTTP Function `get-events`（本地仍可用 Vite middleware） | 事件列表、固定信息、官方 URL |
 | AI 管线 | CloudBase Event Functions + Timer | 检测、生成、重试 |
-| 摘要读 API | CloudBase HTTP Function（或 Event + 网关） | `GET` briefs |
-| 前端 | 现有 Vite/React（可仍托管在 Vercel） | 详情页合并两路数据 |
+| 摘要读 API | CloudBase HTTP Function `get-briefs` | `GET` briefs |
+| Backfill 触发 | CloudBase HTTP Function `trigger-backfill` | 历史年补扫 |
 | 原文归档 | CloudBase 云存储（可选） | 长文/PDF 备份，便于重试与审计 |
 
-单用户阶段也可把「检测逻辑」复用现有 `server/lib/sec.ts`、`fed.ts` 思路迁入云函数；**不必**第一天把时间线也迁到 CloudBase。
+**不再使用 Vercel。** 网关默认域：`https://<envId>-<appId>.tcloudbaseapp.com`；路径示例：`/get-events`、`/get-briefs`、`/trigger-backfill`。
 
 ---
 
@@ -234,7 +238,9 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 |--------|------|------|------|--------|
 | `detect-new-materials` | Event | Timer 30min（内部 dense/daily/idle） | jobs, briefs(状态) | 否 |
 | `generate-brief` | Event | invoke 为主 + Timer 扫队列 | jobs, briefs, source_* | **是**（有 job 时） |
+| `get-events` | HTTP | 浏览器/前端 | 否 | 否 |
 | `get-briefs` | HTTP | 浏览器/前端 | 否 | 否 |
+| `trigger-backfill` | HTTP | 前端切历史年（鉴权） | 否（invoke detect） | 否 |
 | `admin-requeue` | Event | 手动 | jobs | 否 |
 
 ---
@@ -245,8 +251,11 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ```text
 并行：
-  GET /api/events/:eventId?year=   → 固定信息 + 官方链接 + 材料发布态（现有）
-  GET {cloudbase}/briefs?eventId=  → AI 槽位状态与正文
+  GET {cloudbase}/get-events/:eventId?year=   → 固定信息 + 官方链接 + 材料发布态
+  GET {cloudbase}/get-briefs?eventId=         → AI 槽位状态与正文
+
+（本地开发：时间线可走 Vite 同源 /api/events* middleware；
+  生产：VITE_CLOUDBASE_EVENTS_URL / VITE_CLOUDBASE_BRIEFS_URL）
 
 渲染三层；AI 区按下列规则合成每张卡的产品状态。
 ```
@@ -335,6 +344,7 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 4. 实现 `detect-new-materials` + Timer  
 5. 接通真实 SEC/Fed 指纹与 prompt  
 6. 观测失败退避一周后再收紧间隔  
+7. ~~（已完成 2026-08-01）~~ 时间线迁入 HTTP `get-events`；前端静态托管 CloudBase；去掉 Vercel 
 
 ---
 
@@ -345,3 +355,4 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 | 2026-07-30 | 初稿：CloudBase 集合、三函数职责、与 Vercel 时间线边界、幂等与状态映射 |
 | 2026-07-30 | 审阅修订：状态合并契约、eventId 对齐、失败耗尽态、槽位补全、年份 backfill、section id、锁过期 |
 | 2026-07-31 | **检测节奏改为窗口加密 + 日常兜底**（§3.1.1）；否定全年无差别高频爬取 |
+| 2026-08-01 | **全栈迁 CloudBase**：静态托管前端 + HTTP `get-events`；移除 Vercel 部署边界 |
