@@ -11,11 +11,11 @@ pnpm dev          # 本地：Vite + /api 中间件（时间线）；CloudBase UR
 
 ## 部署（全栈 CloudBase）
 
-| 组件 | CloudBase |
-|------|-----------|
-| 静态前端 | 静态网站托管 |
-| 时间线 `get-events` | HTTP 云函数 |
-| AI 简报 / backfill | HTTP / 事件云函数 |
+| 组件                | CloudBase         |
+| ------------------- | ----------------- |
+| 静态前端            | 静态网站托管      |
+| 时间线 `get-events` | HTTP 云函数       |
+| AI 简报 / backfill  | HTTP / 事件云函数 |
 
 **1. 编译并上传云函数**
 
@@ -40,11 +40,11 @@ pnpm deploy:cloudbase
 
 ## 数据来源（公开）
 
-| 数据 | 来源 |
-|------|------|
-| 已披露财报 | [SEC EDGAR](https://data.sec.gov) |
-| 待披露日程（预计） | [Nasdaq Earnings Calendar](https://api.nasdaq.com) |
-| FOMC 日程与材料 | [Federal Reserve](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm) |
+| 数据               | 来源                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| 已披露财报         | [SEC EDGAR](https://data.sec.gov)                                                  |
+| 待披露日程（预计） | [Nasdaq Earnings Calendar](https://api.nasdaq.com)                                 |
+| FOMC 日程与材料    | [Federal Reserve](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm) |
 
 ## 文档
 
@@ -59,19 +59,20 @@ pnpm deploy:cloudbase
 
 ## 技术栈
 
-| 用途              | 工具                                               |
-| ----------------- | -------------------------------------------------- |
-| 构建 / 开发服务器 | [Vite](https://vite.dev/) 8                        |
-| UI                | [React](https://react.dev/) 19                     |
-| 路由              | [TanStack Router](https://tanstack.com/router)     |
-| 状态              | [Zustand](https://zustand.docs.pmnd.rs/)           |
-| 语言              | [TypeScript](https://www.typescriptlang.org/) 7    |
-| 样式预处理器      | [Sass](https://sass-lang.com/)                     |
-| className         | [clsx](https://github.com/lukeed/clsx)             |
-| 工具库            | [lodash-es](https://lodash.com/)                   |
-| 测试              | [Vitest](https://vitest.dev/) + Testing Library    |
-| Lint              | [Oxlint](https://oxc.rs/docs/guide/usage/linter)   |
-| Format            | [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) |
+| 用途              | 工具                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 构建 / 开发服务器 | [Vite](https://vite.dev/) 8                                                                                                                       |
+| UI                | [React](https://react.dev/) 19                                                                                                                    |
+| 路由              | [TanStack Router](https://tanstack.com/router)                                                                                                    |
+| 状态              | [Zustand](https://zustand.docs.pmnd.rs/)                                                                                                          |
+| 语言              | [TypeScript](https://www.typescriptlang.org/) 7                                                                                                   |
+| 样式预处理器      | [Sass](https://sass-lang.com/)                                                                                                                    |
+| className         | [clsx](https://github.com/lukeed/clsx)                                                                                                            |
+| 工具库            | [lodash-es](https://lodash.com/)                                                                                                                  |
+| 测试              | [Vitest](https://vitest.dev/) + Testing Library                                                                                                   |
+| Lint              | [Oxlint](https://oxc.rs/docs/guide/usage/linter)                                                                                                  |
+| Format            | [Oxfmt](https://oxc.rs/docs/guide/usage/formatter)                                                                                                |
+| Git hooks         | [Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) + [commitlint](https://commitlint.js.org/) |
 
 ## 脚本
 
@@ -94,6 +95,10 @@ pnpm format:check    # 检查格式是否符合规范
 pnpm cf:build        # 编译云函数 .ts → .js
 pnpm deploy:cloudbase # 构建并上传静态站到 CloudBase
 ```
+
+提交约定（[Conventional Commits](https://www.conventionalcommits.org/)）：`type(scope): subject`  
+例如 `feat(events): add timeline year switch`、`chore: setup husky and commitlint`。  
+`pre-commit` 会对暂存文件跑 Oxlint + Oxfmt；`commit-msg` 会校验提交说明。
 
 ## 目录
 
