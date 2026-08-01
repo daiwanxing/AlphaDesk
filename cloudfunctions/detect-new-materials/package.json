@@ -1,0 +1,9 @@
+{
+  "name": "detect-new-materials",
+  "version": "1.0.0",
+  "description": "Window-driven material detect → enqueue generate-brief jobs",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

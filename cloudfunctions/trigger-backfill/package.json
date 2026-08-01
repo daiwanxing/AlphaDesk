@@ -1,0 +1,9 @@
+{
+  "name": "trigger-backfill",
+  "version": "1.0.0",
+  "description": "HTTP trigger for historical-year brief backfill",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

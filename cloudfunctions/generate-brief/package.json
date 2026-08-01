@@ -1,0 +1,9 @@
+{
+  "name": "generate-brief",
+  "version": "1.0.0",
+  "description": "Claim jobs → SEC/Fed fetch + DeepSeek → briefs ready",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

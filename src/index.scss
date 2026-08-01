@@ -1,0 +1,59 @@
+:root {
+  --text: #64748b;
+  --text-h: #0f172a;
+  --bg: #f8fafc;
+  --border: #e2e8f0;
+  --code-bg: #f1f5f9;
+  --accent: #4f46e5;
+  --accent-bg: rgba(79, 70, 229, 0.08);
+  --accent-border: rgba(79, 70, 229, 0.35);
+  --shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+
+  --sans: "SF Pro Text", system-ui, -apple-system, sans-serif;
+  --heading: var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #94a3b8;
+    --text-h: #f1f5f9;
+    --bg: #0b1120;
+    --border: #1e293b;
+    --code-bg: #111827;
+    --accent: #818cf8;
+    --accent-bg: rgba(129, 140, 248, 0.12);
+    --accent-border: rgba(129, 140, 248, 0.4);
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--heading);
+  color: var(--text-h);
+}
+
+a {
+  color: var(--accent);
+}
