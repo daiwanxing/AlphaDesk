@@ -19,6 +19,8 @@ jobs:
   deploy:
     name: Build & deploy (hosting + functions)
     runs-on: ubuntu-latest
+    # Secrets live in GitHub Environment "ENV" (not Repository secrets)
+    environment: ENV
     timeout-minutes: 30
 
     env:
@@ -63,9 +65,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${TCB_SECRET_ID}" ] || [ -z "${TCB_SECRET_KEY}" ]; then
-            echo "::error::Missing GitHub Secrets TCB_SECRET_ID / TCB_SECRET_KEY."
-            echo "Add them under Settings → Secrets and variables → Actions"
-            echo "(Tencent Cloud CAM permanent SecretId / SecretKey)."
+            echo "::error::Missing secrets TCB_SECRET_ID / TCB_SECRET_KEY for environment ENV."
+            echo "They must be Environment secrets (not only Repository secrets),"
+            echo "and this job must set environment: ENV."
             exit 1
           fi
           tcb login --apiKeyId "${TCB_SECRET_ID}" --apiKey "${TCB_SECRET_KEY}" --yes
