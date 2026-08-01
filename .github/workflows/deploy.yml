@@ -50,10 +50,27 @@ jobs:
         run: pnpm build:cloudbase
 
       - name: Install CloudBase CLI
-        run: npm install -g @cloudbase/cli
+        run: npm install -g @cloudbase/cli@3.7.0
 
+      # Must use API key login. Empty secrets make CLI fall back to browser/device auth (hangs in Actions).
+      # Docs: https://docs.cloudbase.net/hosting/cli-devops
+      #       https://docs.cloudbase.net/framework/ci
       - name: Login CloudBase (CI)
-        run: tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+        env:
+          CI: "true"
+          TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+          TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TCB_SECRET_ID}" ] || [ -z "${TCB_SECRET_KEY}" ]; then
+            echo "::error::Missing GitHub Secrets TCB_SECRET_ID / TCB_SECRET_KEY."
+            echo "Add them under Settings → Secrets and variables → Actions"
+            echo "(Tencent Cloud CAM permanent SecretId / SecretKey)."
+            exit 1
+          fi
+          tcb login --apiKeyId "${TCB_SECRET_ID}" --apiKey "${TCB_SECRET_KEY}" --yes
 
       - name: Deploy hosting + cloud functions
+        env:
+          CI: "true"
         run: bash scripts/deploy-cloudbase.sh
