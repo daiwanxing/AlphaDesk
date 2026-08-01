@@ -28,10 +28,10 @@ deploy_functions() {
 
   # Functions already exist in env — do NOT pass --httpFn on update
   # (type is locked; --httpFn can break updates). scf_bootstrap stays in the package.
-  echo "==> Deploy functions → $ENV_ID"
+  echo "==> Deploy functions → $ENV_ID (dir: cloudfunctions)"
   for fn in "${HTTP_FNS[@]}" "${EVENT_FNS[@]}"; do
     echo "---- tcb fn deploy $fn ----"
-    if ! tcb fn deploy "$fn" --env-id "$ENV_ID" --yes --force; then
+    if ! tcb fn deploy "$fn" --dir "$CF_ROOT" --env-id "$ENV_ID" --yes --force; then
       echo "::error::Failed deploying function: $fn"
       echo "---- tcb fn detail $fn (best effort) ----"
       tcb fn detail "$fn" --env-id "$ENV_ID" || true
