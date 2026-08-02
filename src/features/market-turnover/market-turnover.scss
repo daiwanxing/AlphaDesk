@@ -34,6 +34,22 @@
   }
 }
 
+.turnover-chart {
+  --chart-today: #3b6ea8;
+  --chart-today-fill: rgba(59, 110, 168, 0.15);
+  --chart-prev: #e6a23c;
+
+  inline-size: 100%;
+  block-size: 240px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+
+  @container turnover (min-width: 720px) {
+    block-size: 320px;
+  }
+}
+
 .turnover-grid {
   display: grid;
   gap: 1px;
