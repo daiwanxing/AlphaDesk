@@ -1,7 +1,6 @@
 /**
  * AlphaDesk Terminal — colors & typography foundations
  * Source: 投研终端骨架畅想 (research-terminal-shell-2.html :root)
- * Bind by pasting or linking this file into artifact <style>/:root.
  *
  * Canonical source values are OKLch; sRGB hex anchors included for
  * engines/tools that inspect concrete #rrggbb tokens.
@@ -144,6 +143,7 @@ html.od-terminal {
 .od-up {
   color: var(--success);
 }
+
 .od-down {
   color: var(--danger);
 }
