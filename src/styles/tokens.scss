@@ -32,8 +32,9 @@
   --h-menu: 36px;
   --h-topbar: 48px;
 
-  /* Radius — default 4px; exceptions: pill / full circle only */
+  /* Radius — controls stay 4px; content panels / KPI cards use 16px */
   --radius: 4px;
+  --radius-panel: 16px;
   --radius-pill: 999px;
   --radius-full: 50%;
 

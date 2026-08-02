@@ -35,3 +35,7 @@ export function resolveMarketSession(now: Date): MarketSession {
   }
   return "closed";
 }
+
+export function isSnapshotSession(session: MarketSession): boolean {
+  return session === "weekend" || session === "pre_open";
+}

@@ -14,6 +14,12 @@ const ULIST_HOSTS = ["https://push2delay.eastmoney.com", "https://push2.eastmone
 
 const KLINE_HOSTS = ["https://push2his.eastmoney.com", "https://push2delay.eastmoney.com"] as const;
 
+const TRENDS2_HOSTS = [
+  "https://push2delay.eastmoney.com",
+  "https://push2.eastmoney.com",
+  "https://push2his.eastmoney.com",
+] as const;
+
 const SECID_TO_TX_SYMBOL: Record<string, string> = {
   "1.000001": "sh000001",
   "0.399001": "sz399001",
@@ -21,6 +27,14 @@ const SECID_TO_TX_SYMBOL: Record<string, string> = {
 };
 
 const TENCENT_KLINE_BASE = "https://web.ifzq.gtimg.cn/appstock/app/newfqkline/get";
+const TENCENT_DAY_MINUTE_BASE = "https://web.ifzq.gtimg.cn/appstock/app/day/query";
+
+export type CumulativeMinutePoint = { t: string; v: number };
+
+type TencentDayMinuteBody = {
+  code?: number;
+  data?: Record<string, { data?: Array<{ date?: string; data?: string[] }> }>;
+};
 
 export type MarketDef = {
   secId: string;
@@ -54,6 +68,11 @@ type UlistBody = {
 type KlineBody = {
   rc?: number;
   data?: { klines?: string[] };
+};
+
+type Trends2Body = {
+  rc?: number;
+  data?: { trends?: string[] };
 };
 
 type TencentKlineBody = {
@@ -104,6 +123,15 @@ function buildKlineUrl(host: string, secId: string, limit: number): string {
   );
 }
 
+function buildTrends2Url(host: string, secId: string, ndays: 1 | 2): string {
+  return (
+    `${host}/api/qt/stock/trends2/get?secid=${encodeURIComponent(secId)}` +
+    "&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13" +
+    "&fields2=f51,f52,f53,f54,f55,f56,f57,f58" +
+    `&iscr=0&ndays=${ndays}&ut=${KLINE_UT}`
+  );
+}
+
 function txSymbolFor(secId: string): string {
   const txSymbol = SECID_TO_TX_SYMBOL[secId];
   if (!txSymbol) {
@@ -116,6 +144,25 @@ function buildTencentKlineUrl(secId: string, limit: number): string {
   const txSymbol = txSymbolFor(secId);
   const param = `${txSymbol},day,,,${limit},qfq`;
   return `${TENCENT_KLINE_BASE}?param=${encodeURIComponent(param)}`;
+}
+
+function buildTencentDayMinuteUrl(secId: string): string {
+  return `${TENCENT_DAY_MINUTE_BASE}?code=${encodeURIComponent(txSymbolFor(secId))}`;
+}
+
+function compactYmdToIso(compact: string): string | null {
+  if (!/^\d{8}$/.test(compact)) return null;
+  return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`;
+}
+
+/** "0930 3833.54 8324010 22322283058.30" — 第 4 段为累计成交额（元）；北证无额字段。 */
+function parseTencentCumulativeMinuteLine(line: string): CumulativeMinutePoint | null {
+  const parts = line.trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const hhmm = parts[0]!;
+  const amount = Number(parts[3]);
+  if (!/^\d{4}$/.test(hhmm) || !Number.isFinite(amount)) return null;
+  return { t: `${hhmm.slice(0, 2)}:${hhmm.slice(2)}`, v: amount };
 }
 
 function sortBarsAsc(bars: KlineBar[]): KlineBar[] {
@@ -224,6 +271,62 @@ async function fetchTencentDailyKlines(secId: string, limit: number): Promise<Kl
   const url = buildTencentKlineUrl(secId, limit);
   const body = await fetchJson<TencentKlineBody>(url, "Tencent");
   return parseTencentKlineBody(body, secId, txSymbol);
+}
+
+/**
+ * 腾讯多日分时（沪/深累计额）。东财 trends2 周末常只吐最近一日时，用来补对比日曲线。
+ * 北证无额字段，调用方用日 K 终点按进度比例叠加上去。
+ */
+export async function fetchTencentDayMinuteSeries(
+  secId: string,
+): Promise<Map<string, CumulativeMinutePoint[]>> {
+  const txSymbol = txSymbolFor(secId);
+  const body = await fetchJson<TencentDayMinuteBody>(buildTencentDayMinuteUrl(secId), "Tencent");
+  const days = body.data?.[txSymbol]?.data;
+  if (body.code !== 0 || !days?.length) {
+    throw new Error(`Tencent day-minute empty or invalid for ${secId}`);
+  }
+
+  const out = new Map<string, CumulativeMinutePoint[]>();
+  for (const day of days) {
+    const ymd = day.date ? compactYmdToIso(day.date) : null;
+    if (!ymd || !day.data?.length) continue;
+    const points: CumulativeMinutePoint[] = [];
+    for (const line of day.data) {
+      const point = parseTencentCumulativeMinuteLine(line);
+      if (point) points.push(point);
+    }
+    if (points.length > 0) out.set(ymd, points);
+  }
+
+  if (out.size === 0) {
+    throw new Error(`Tencent day-minute parsed empty for ${secId}`);
+  }
+  return out;
+}
+
+function parseTrends2Body(body: Trends2Body, secId: string): string[] {
+  if (body.rc !== 0 || !body.data?.trends?.length) {
+    throw new Error(`trends2 empty or invalid for ${secId}`);
+  }
+  return body.data.trends;
+}
+
+export async function fetchTrends2(secId: string, ndays: 1 | 2): Promise<string[]> {
+  const errors: string[] = [];
+
+  for (const host of TRENDS2_HOSTS) {
+    const url = buildTrends2Url(host, secId, ndays);
+    try {
+      const body = await fetchJson<Trends2Body>(url, "Eastmoney");
+      return parseTrends2Body(body, secId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(message);
+    }
+  }
+
+  throw new Error(`Eastmoney trends2 all hosts failed for ${secId}: ${errors.join("; ")}`);
 }
 
 export async function fetchDailyKlines(secId: string, limit = 10): Promise<KlineBar[]> {
