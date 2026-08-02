@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Label, ListBox, Select } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { fetchTimeline, requestBriefBackfill } from "@/features/event-track/api";
-import { EventTimeline, StatsBar, TimelineSkeleton } from "@/features/event-track/components/EventTimeline";
+import {
+  EventTimeline,
+  StatsBar,
+  TimelineSkeleton,
+} from "@/features/event-track/components/EventTimeline";
 import { MAG7_TICKERS, type TimelineResponse } from "@/features/event-track/types";
 import "@/features/event-track/event-track.scss";
 
@@ -56,37 +61,59 @@ function EventTrackPage() {
     <div className="event-track">
       <header className="event-track__toolbar">
         <div className="event-track__filters">
-          <label className="filter">
-            <span>年份</span>
-            <select
-              value={year}
-              onChange={(e) =>
-                navigate({ search: (prev) => ({ ...prev, year: Number(e.target.value) }) })
-              }
+          <div className="filter">
+            <Label>年份</Label>
+            <Select
+              aria-label="年份"
+              selectedKey={String(year)}
+              onSelectionChange={(key) => {
+                if (key == null) return;
+                navigate({ search: (prev) => ({ ...prev, year: Number(key) }) });
+              }}
             >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="filter">
-            <span>公司</span>
-            <select
-              value={ticker}
-              onChange={(e) =>
-                navigate({ search: (prev) => ({ ...prev, ticker: e.target.value }) })
-              }
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {years.map((y) => (
+                    <ListBox.Item key={y} id={String(y)} textValue={String(y)}>
+                      {y}
+                    </ListBox.Item>
+                  ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+          </div>
+          <div className="filter">
+            <Label>公司</Label>
+            <Select
+              aria-label="公司"
+              selectedKey={ticker}
+              onSelectionChange={(key) => {
+                if (key == null) return;
+                navigate({ search: (prev) => ({ ...prev, ticker: String(key) }) });
+              }}
             >
-              <option value="all">全部七姐妹</option>
-              {MAG7_TICKERS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="all" textValue="全部七姐妹">
+                    全部七姐妹
+                  </ListBox.Item>
+                  {MAG7_TICKERS.map((t) => (
+                    <ListBox.Item key={t} id={t} textValue={t}>
+                      {t}
+                    </ListBox.Item>
+                  ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+          </div>
         </div>
         {data && <StatsBar meta={data.meta} />}
       </header>
@@ -101,8 +128,8 @@ function EventTrackPage() {
       {data && !loading && !error && (
         <>
           <p className="event-track__note muted">
-            已披露：主链公司 IR；SEC EDGAR 供核对。待披露日程来自 Nasdaq Calendar。FOMC 来自
-            Federal Reserve。预计日仅供参考。
+            已披露：主链公司 IR；SEC EDGAR 供核对。待披露日程来自 Nasdaq Calendar。FOMC 来自 Federal
+            Reserve。预计日仅供参考。
           </p>
           <EventTimeline events={data.events} year={year} tickerFilter={ticker} />
           <p className="event-track__updated muted">

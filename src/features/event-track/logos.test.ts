@@ -1,0 +1,24 @@
+import { describe, expect, it } from "vitest";
+import { logoUrlForTicker, fallbackInitials, THESVG_REF } from "./logos";
+
+describe("logos", () => {
+  it("uses colored theSVG CDN for MAG7 (Apple via Wikimedia)", () => {
+    expect(THESVG_REF).toBe("v2.0.0");
+    expect(logoUrlForTicker("AAPL")).toBe(
+      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    );
+    expect(logoUrlForTicker("NVDA")).toBe(
+      "https://cdn.jsdelivr.net/gh/glincker/thesvg@v2.0.0/public/icons/nvidia/default.svg",
+    );
+    expect(logoUrlForTicker("MSFT")).toContain("/microsoft/default.svg");
+  });
+
+  it("returns null for unknown ticker", () => {
+    expect(logoUrlForTicker("ZZZZ")).toBeNull();
+  });
+
+  it("builds fallback initials", () => {
+    expect(fallbackInitials("AAPL")).toBe("AA");
+    expect(fallbackInitials("FOMC")).toBe("FO");
+  });
+});

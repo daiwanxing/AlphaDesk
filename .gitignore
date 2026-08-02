@@ -56,3 +56,7 @@ Thumbs.db
 
 # Cursor local workspace state
 .cursor/
+.superpowers/
+
+# Git worktrees (local feature workspaces)
+.worktrees/

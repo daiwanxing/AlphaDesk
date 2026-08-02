@@ -31,10 +31,7 @@ export async function fetchTimeline(year: number): Promise<TimelineResponse> {
   return parseJson<TimelineResponse>(res);
 }
 
-export async function fetchEventDetail(
-  year: number,
-  id: string,
-): Promise<EventDetailResponse> {
+export async function fetchEventDetail(year: number, id: string): Promise<EventDetailResponse> {
   const res = await fetch(timelineDetailUrl(year, id));
   return parseJson<EventDetailResponse>(res);
 }
@@ -65,19 +62,15 @@ export async function requestBriefBackfill(year: number): Promise<void> {
   });
 }
 
-export function eventSortDate(event: TimelineResponse["events"][number]): string {
+export function eventDisplayDate(event: TimelineResponse["events"][number]): string {
   if (event.kind === "earnings") {
     return event.actualDate ?? event.scheduledDate ?? "9999-12-31";
   }
   return event.meetingEndDate;
 }
 
-export function eventDisplayDate(event: TimelineResponse["events"][number]): string {
-  return eventSortDate(event);
-}
-
 export function formatDisplayDate(iso: string): string {
-  const d = new Date(iso + (iso.length === 10 ? "T12:00:00" : ""));
+  const d = new Date(iso.length === 10 ? iso + "T12:00:00" : iso);
   return d.toLocaleDateString("zh-CN", {
     year: "numeric",
     month: "short",

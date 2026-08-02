@@ -1,5 +1,5 @@
 import { RouterProvider, createMemoryHistory, createRouter } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { routeTree } from "../routeTree.gen";
 
@@ -9,7 +9,7 @@ function renderApp(initialPath = "/") {
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
-  return render(<RouterProvider router={router} />);
+  return { ...render(<RouterProvider router={router} />), router };
 }
 
 describe("EventTrackPage", () => {
@@ -27,7 +27,9 @@ describe("EventTrackPage", () => {
       }),
     );
 
-    renderApp();
+    const { router } = renderApp();
+    await waitFor(() => expect(router.state.status).toBe("idle"), { timeout: 5000 });
+
     expect(await screen.findByText(/事件追踪 · 七姐妹 & FOMC/i)).toBeInTheDocument();
     expect(await screen.findByText(/该年份暂无事件数据/i)).toBeInTheDocument();
 
