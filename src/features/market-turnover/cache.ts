@@ -1,4 +1,4 @@
-import type { MarketTurnoverResponse } from "./types";
+import type { MarketTurnoverResponse, TurnoverPoint } from "./types";
 
 const STORAGE_KEY = "investor:market-turnover:v1";
 
@@ -36,6 +36,14 @@ export function writeTurnoverCache(data: MarketTurnoverResponse): void {
   }
 }
 
+function lastPointEqual(a: TurnoverPoint[] | undefined, b: TurnoverPoint[] | undefined): boolean {
+  const aLast = a?.at(-1);
+  const bLast = b?.at(-1);
+  if (aLast === bLast) return true;
+  if (!aLast || !bLast) return false;
+  return aLast.t === bLast.t && aLast.v === bLast.v;
+}
+
 /** Cheap probe equality — asOf + amounts; avoids full JSON.stringify on every poll. */
 export function turnoverDataEqual(
   a: MarketTurnoverResponse | null | undefined,
@@ -43,9 +51,17 @@ export function turnoverDataEqual(
 ): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
-  if (a.asOf !== b.asOf || a.session !== b.session || a.total.amount !== b.total.amount) {
+  if (
+    a.asOf !== b.asOf ||
+    a.session !== b.session ||
+    a.compareMode !== b.compareMode ||
+    a.total.amount !== b.total.amount ||
+    a.total.prevSameTimeAmount !== b.total.prevSameTimeAmount
+  ) {
     return false;
   }
+  if (!lastPointEqual(a.series?.today, b.series?.today)) return false;
+  if (!lastPointEqual(a.series?.prev, b.series?.prev)) return false;
   if (a.markets.length !== b.markets.length) return false;
   return a.markets.every(
     (m, i) =>

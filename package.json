@@ -23,8 +23,10 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@number-flow/react": "^0.6.2",
     "@tanstack/react-router": "^1.170.18",
     "clsx": "^2.1.1",
+    "echarts": "^6.1.0",
     "lodash-es": "^4.18.1",
     "lucide-react": "^1.28.0",
     "motion": "^12.43.0",
