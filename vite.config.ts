@@ -33,20 +33,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/cloudbase-briefs": {
+      // 单一前缀：/cloudbase/get-events → 网关 /get-events（加函数只改 path，不改 proxy）
+      "/cloudbase": {
         target: "https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/cloudbase-briefs/, "/get-briefs"),
-      },
-      "/cloudbase-backfill": {
-        target: "https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/cloudbase-backfill/, "/trigger-backfill"),
-      },
-      "/cloudbase-events": {
-        target: "https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/cloudbase-events/, "/get-events"),
+        rewrite: (p) => p.replace(/^\/cloudbase/, "") || "/",
       },
     },
   },

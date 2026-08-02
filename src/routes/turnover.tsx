@@ -10,13 +10,10 @@ import {
 import { TurnoverBoard } from "@/features/market-turnover/components/TurnoverBoard";
 import { resolveMarketSession } from "@/features/market-turnover/session";
 import type { MarketSession, MarketTurnoverResponse } from "@/features/market-turnover/types";
+import { cloudbaseApiBase } from "@/shared/config/cloudbase";
 
 const POLL_BASE_MS = 15_000;
 const BACKOFF_MS = [30_000, 60_000] as const;
-
-function turnoverUrl(): string | undefined {
-  return import.meta.env.VITE_CLOUDBASE_TURNOVER_URL as string | undefined;
-}
 
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === "AbortError";
@@ -49,9 +46,9 @@ function TurnoverPage() {
   dataRef.current = data;
   const displaySession = data?.session ?? localSession;
 
-  const configError = turnoverUrl()
+  const configError = cloudbaseApiBase()
     ? null
-    : "请在 .env.local 中配置 VITE_CLOUDBASE_TURNOVER_URL（CloudBase get-market-turnover 地址）";
+    : "请在 .env.local 中配置 VITE_CLOUDBASE_API_BASE（本地可用 /cloudbase）";
 
   const applyFetched = useCallback((res: MarketTurnoverResponse) => {
     if (turnoverDataEqual(dataRef.current, res)) return;
@@ -72,7 +69,7 @@ function TurnoverPage() {
   }, []);
 
   const load = useCallback(async (): Promise<boolean> => {
-    if (!turnoverUrl()) {
+    if (!cloudbaseApiBase()) {
       setError(null);
       setLoading(false);
       return false;

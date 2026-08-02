@@ -1,4 +1,5 @@
 import type { MarketTurnoverResponse } from "./types";
+import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
 
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -11,10 +12,10 @@ async function parseJson<T>(res: Response): Promise<T> {
 export async function fetchMarketTurnover(options?: {
   signal?: AbortSignal;
 }): Promise<MarketTurnoverResponse> {
-  const base = import.meta.env.VITE_CLOUDBASE_TURNOVER_URL as string | undefined;
-  if (!base) {
-    throw new Error("VITE_CLOUDBASE_TURNOVER_URL is not set");
+  const url = cloudbaseUrl(CLOUDBASE_PATHS.turnover);
+  if (!url) {
+    throw new Error("VITE_CLOUDBASE_API_BASE is not set");
   }
-  const res = await fetch(base, { signal: options?.signal });
+  const res = await fetch(url, { signal: options?.signal });
   return parseJson<MarketTurnoverResponse>(res);
 }

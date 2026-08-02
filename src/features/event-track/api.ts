@@ -1,4 +1,5 @@
 import type { BriefDoc, EventDetailResponse, TimelineResponse } from "./types";
+import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
 
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -9,8 +10,7 @@ async function parseJson<T>(res: Response): Promise<T> {
 }
 
 function eventsBase(): string {
-  const base = import.meta.env.VITE_CLOUDBASE_EVENTS_URL as string | undefined;
-  return base?.replace(/\/$/, "") ?? "";
+  return cloudbaseUrl(CLOUDBASE_PATHS.events) ?? "";
 }
 
 function timelineListUrl(year: number): string {
@@ -38,7 +38,7 @@ export async function fetchEventDetail(year: number, id: string): Promise<EventD
 
 /** 无云 URL 时返回空列表，由状态合成显示占位/撰写中 */
 export async function fetchBriefs(eventId: string): Promise<{ briefs: BriefDoc[] }> {
-  const base = import.meta.env.VITE_CLOUDBASE_BRIEFS_URL as string | undefined;
+  const base = cloudbaseUrl(CLOUDBASE_PATHS.briefs);
   if (!base) {
     return { briefs: [] };
   }
@@ -49,7 +49,7 @@ export async function fetchBriefs(eventId: string): Promise<{ briefs: BriefDoc[]
 
 /** 切历史年时点火 backfill；未配置则跳过，失败不影响时间线 */
 export async function requestBriefBackfill(year: number): Promise<void> {
-  const base = import.meta.env.VITE_CLOUDBASE_BACKFILL_URL as string | undefined;
+  const base = cloudbaseUrl(CLOUDBASE_PATHS.backfill);
   const key = import.meta.env.VITE_BRIEF_API_KEY as string | undefined;
   if (!base || !key) return;
   await fetch(base, {
