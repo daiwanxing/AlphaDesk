@@ -72,31 +72,31 @@ textarea {
   background: var(--bg);
   white-space: nowrap;
 
-  &.tag--success {
+  &--success {
     color: var(--success);
     border-color: color-mix(in oklch, var(--success) 35%, transparent);
     background: color-mix(in oklch, var(--success) 8%, transparent);
   }
 
-  &.tag--warn {
+  &--warn {
     color: var(--warn);
     border-color: color-mix(in oklch, var(--warn) 35%, transparent);
     background: color-mix(in oklch, var(--warn) 10%, transparent);
   }
 
-  &.tag--danger {
+  &--danger {
     color: var(--danger);
     border-color: color-mix(in oklch, var(--danger) 30%, transparent);
     background: color-mix(in oklch, var(--danger) 8%, transparent);
   }
 
-  &.tag--info {
+  &--info {
     color: var(--info);
     border-color: color-mix(in oklch, var(--info) 30%, transparent);
     background: color-mix(in oklch, var(--info) 8%, transparent);
   }
 
-  &.tag--pending {
+  &--pending {
     color: var(--muted);
   }
 }
@@ -108,28 +108,28 @@ textarea {
   border-radius: var(--radius);
   background: var(--surface);
   font-size: var(--text-base);
-}
 
-.note-box--danger {
-  border-color: color-mix(in oklch, var(--danger) 35%, transparent);
-  background: var(--danger-soft);
-}
+  &--danger {
+    border-color: color-mix(in oklch, var(--danger) 35%, transparent);
+    background: var(--danger-soft);
+  }
 
-.note-box--warn {
-  border-color: color-mix(in oklch, var(--warn) 40%, transparent);
-  background: var(--warn-soft);
-}
+  &--warn {
+    border-color: color-mix(in oklch, var(--warn) 40%, transparent);
+    background: var(--warn-soft);
+  }
 
-.note-box__title {
-  margin: 0 0 0.2rem;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--fg);
-}
+  &__title {
+    margin: 0 0 0.2rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--fg);
+  }
 
-.note-box__body {
-  margin: 0;
-  color: var(--muted);
+  &__body {
+    margin: 0;
+    color: var(--muted);
+  }
 }
 
 .skeleton-row {

@@ -5,33 +5,33 @@
   max-inline-size: 960px;
   container-type: inline-size;
   container-name: turnover;
-}
 
-.turnover-board__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
 
-.turnover-board__title {
-  margin: 0;
-  font-size: clamp(20px, 2.2vw, 26px);
-  font-weight: 600;
-  letter-spacing: var(--tracking-tight);
-}
+  &__title {
+    margin: 0;
+    font-size: clamp(20px, 2.2vw, 26px);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+  }
 
-.turnover-board__asof,
-.turnover-board__loading {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
+  &__asof,
+  &__loading {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
 
-.turnover-board__loading {
-  padding-block: 3rem;
-  text-align: center;
+  &__loading {
+    padding-block: 3rem;
+    text-align: center;
+  }
 }
 
 .turnover-grid {
@@ -41,10 +41,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: clip;
-}
 
-@container turnover (min-width: 720px) {
-  .turnover-grid {
+  @container turnover (min-width: 720px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -56,33 +54,33 @@
   padding-block: 0.9rem;
   padding-inline: 1rem;
   background: var(--surface);
-}
 
-.turnover-card__head {
-  margin-block-end: 0.25rem;
-}
+  &__head {
+    margin-block-end: 0.25rem;
+  }
 
-.turnover-card__title {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
-}
+  &__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: var(--tracking-snug);
+  }
 
-.turnover-card__source,
-.turnover-card__label {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--muted);
-}
+  &__source,
+  &__label {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
 
-.turnover-card__amount {
-  margin: 0;
-  font-size: var(--text-metric);
-  font-weight: 600;
-  letter-spacing: var(--tracking-tight);
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
+  &__amount {
+    margin: 0;
+    font-size: var(--text-metric);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .delta {
@@ -91,14 +89,14 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-}
 
-.delta--up {
-  color: var(--success);
-}
+  &--up {
+    color: var(--success);
+  }
 
-.delta--down {
-  color: var(--danger);
+  &--down {
+    color: var(--danger);
+  }
 }
 
 .turnover-total {
