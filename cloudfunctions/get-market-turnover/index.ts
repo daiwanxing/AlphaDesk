@@ -1,13 +1,20 @@
 import http from "node:http";
 import { URL } from "node:url";
 import cloudbase from "@cloudbase/node-sdk";
-import { fetchDailyKlines, fetchTrends2, MARKETS, type KlineBar } from "./eastmoney";
+import {
+  fetchDailyKlines,
+  fetchTencentDayMinuteSeries,
+  fetchTrends2,
+  MARKETS,
+  type KlineBar,
+} from "./eastmoney";
 import {
   calcDelta,
   cumsumMinuteAmounts,
   mergeMarketCumulatives,
   parseTrendsLine,
   pickSeriesDates,
+  scaleSeriesToEndpoint,
   valueAtOrBefore,
   type MinuteAmount,
   type TurnoverPoint,
@@ -110,6 +117,19 @@ function shanghaiAsOf(now: Date): string {
   return `${y}-${m}-${d}T${h}:${min}:${s}+08:00`;
 }
 
+/** 休市快照：asOf 取主序列交易日最后时刻，避免周末显示「正在更新」。 */
+function asOfForSeries(
+  session: MarketSession,
+  tradeDate: string,
+  lastT: string,
+  now: Date,
+): string {
+  if (isSnapshotSession(session) || session === "closed") {
+    return `${tradeDate}T${lastT}:00+08:00`;
+  }
+  return shanghaiAsOf(now);
+}
+
 function prevTradingDayYmd(fromYmd: string): string {
   let cursor = new Date(`${fromYmd}T12:00:00+08:00`);
   cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
@@ -172,39 +192,14 @@ function isSnapshotSession(session: MarketSession): boolean {
   return session === "weekend" || session === "pre_open";
 }
 
-const SCOPE_NOTE = "口径为上证+深成指+北证50";
-
-function sessionPrefix(session: MarketSession): string {
-  if (session === "weekend") return "周末休市";
-  if (session === "pre_open") return "盘前";
-  if (session === "closed") return "已收盘";
-  if (session === "lunch") return "午间休市";
-  return "盘中";
+function disclaimerFor(_session: MarketSession, compareMode: CompareMode): string {
+  return compareMode === "vs_prev_full_day"
+    ? "暂无对比日分时，KPI 按昨收全天对比"
+    : "同时刻累计对比";
 }
 
-function disclaimerFor(session: MarketSession, compareMode: CompareMode): string {
-  const prefix = sessionPrefix(session);
-  const main = isSnapshotSession(session)
-    ? "主图为上一交易日全日累计"
-    : session === "closed"
-      ? "主图为今日全日累计"
-      : "主图为今日累计成交额";
-
-  if (compareMode === "vs_prev_full_day") {
-    return `${prefix} · ${main} · 暂无对比日分时 · KPI 为相对全天 · ${SCOPE_NOTE}`;
-  }
-
-  const compare = isSnapshotSession(session)
-    ? "对比再上一交易日"
-    : session === "closed"
-      ? "对比上一交易日全日"
-      : "对比上一交易日同时刻";
-  return `${prefix} · ${main} · ${compare} · ${SCOPE_NOTE}`;
-}
-
-/** 分时上游不可用、仅剩日 K 全天口径时的说明 */
-function klineOnlyDisclaimerFor(session: MarketSession): string {
-  return `${sessionPrefix(session)} · 分时数据暂不可用 · 仅展示全天成交额 · ${SCOPE_NOTE}`;
+function klineOnlyDisclaimerFor(_session: MarketSession): string {
+  return "分时暂不可用 · 仅展示全天成交额";
 }
 
 function lastPoint(points: TurnoverPoint[]): TurnoverPoint | undefined {
@@ -254,6 +249,29 @@ function mergedSeriesFor(perMarket: MarketDaySeries[], day: string): TurnoverPoi
   const perMarketPoints = perMarket.map((market) => market.get(day));
   if (perMarketPoints.some((points) => !points?.length)) return [];
   return mergeMarketCumulatives(perMarketPoints as TurnoverPoint[][]);
+}
+
+/**
+ * 东财 trends / 文档缓存都没有对比日分时时：腾讯沪深多日分时 + 北证日 K 终点按进度叠加。
+ */
+async function loadPrevSeriesFromTencent(
+  prevTradeDate: string,
+  bjEndpoint: number,
+): Promise<TurnoverPoint[]> {
+  const [shByDay, szByDay] = await Promise.all([
+    fetchTencentDayMinuteSeries("1.000001"),
+    fetchTencentDayMinuteSeries("0.399001"),
+  ]);
+  const sh = shByDay.get(prevTradeDate) ?? [];
+  const sz = szByDay.get(prevTradeDate) ?? [];
+  if (sh.length === 0 || sz.length === 0) return [];
+
+  const hs = mergeMarketCumulatives([sh, sz]);
+  if (!isFullDaySeries(hs)) return [];
+  if (bjEndpoint <= 0) return hs;
+
+  const bj = scaleSeriesToEndpoint(hs, bjEndpoint);
+  return mergeMarketCumulatives([hs, bj]);
 }
 
 function dbOf() {
@@ -411,7 +429,7 @@ async function buildKlineSnapshotResponse(
 
   return {
     ok: true,
-    asOf: shanghaiAsOf(now),
+    asOf: asOfForSeries(session, first.tradeDate, "15:00", now),
     session,
     compareMode: "vs_prev_full_day",
     disclaimer: klineOnlyDisclaimerFor(session),
@@ -505,6 +523,7 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
 
   let prevSeries: TurnoverPoint[] = trendsPrevIsFullDay ? trendsPrev : [];
   let prevFullDayBySecId: Record<string, number>;
+  let prevSeriesFromCache = false;
 
   if (trendsPrevIsFullDay) {
     prevFullDayBySecId = Object.fromEntries(
@@ -531,10 +550,21 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     }
     if (cachedPrev && cachedPrev.prevTradeDate === prevTradeDate) {
       prevSeries = cachedPrev.points;
+      prevSeriesFromCache = true;
+    }
+    if (prevSeries.length === 0) {
+      try {
+        const bjSecId = MARKETS.find((m) => m.id === "bj")!.secId;
+        prevSeries = await loadPrevSeriesFromTencent(
+          prevTradeDate,
+          prevFullDayBySecId[bjSecId] ?? 0,
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("[get-market-turnover] tencent prev fallback failed:", message);
+      }
     }
   }
-
-  const prevSeriesFromCache = prevSeries.length > 0 && !trendsPrevIsFullDay;
 
   const markets: MarketTurnoverMarket[] = MARKETS.map((market, index) => {
     const dayPoints = seriesByMarket[index]!.get(dates.tradeDate) ?? [];
@@ -589,7 +619,7 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
 
   const response: MarketTurnoverResponse = {
     ok: true,
-    asOf: shanghaiAsOf(now),
+    asOf: asOfForSeries(session, dates.tradeDate, lastToday.t, now),
     session,
     compareMode,
     disclaimer: disclaimerFor(session, compareMode),

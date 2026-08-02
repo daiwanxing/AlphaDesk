@@ -22,18 +22,25 @@ describe("buildTradingMinuteLabels", () => {
 });
 
 describe("alignSeriesToAxis", () => {
-  const axis = ["09:30", "09:31", "09:32"];
+  const axis = ["09:30", "09:31", "09:32", "11:30", "13:00", "13:01"];
 
   it("maps known minutes to values", () => {
     expect(
       alignSeriesToAxis(axis, [
         { t: "09:30", v: 1 },
         { t: "09:32", v: 3 },
+        { t: "11:30", v: 10 },
+        { t: "13:01", v: 12 },
       ]),
-    ).toEqual([1, null, 3]);
+    ).toEqual([1, 1, 3, 10, 10, 12]);
   });
 
-  it("does not forward-fill missing minutes", () => {
-    expect(alignSeriesToAxis(axis, [{ t: "09:30", v: 1 }])).toEqual([1, null, null]);
+  it("bridges internal gaps but does not extend past last observed point", () => {
+    expect(
+      alignSeriesToAxis(axis, [
+        { t: "09:30", v: 1 },
+        { t: "11:30", v: 10 },
+      ]),
+    ).toEqual([1, 1, 1, 10, null, null]);
   });
 });

@@ -86,3 +86,10 @@ export function calcDelta(amount: number, baseline: number): { delta: number; de
   const deltaPct = baseline > 0 ? delta / baseline : 0;
   return { delta, deltaPct };
 }
+
+/** 用 shape 的进度比例把序列缩放到指定终点（周末补北证分时用）。 */
+export function scaleSeriesToEndpoint(shape: TurnoverPoint[], endpoint: number): TurnoverPoint[] {
+  const last = shape[shape.length - 1]?.v;
+  if (!last || last <= 0 || !Number.isFinite(endpoint) || endpoint < 0) return [];
+  return shape.map((point) => ({ t: point.t, v: (point.v / last) * endpoint }));
+}

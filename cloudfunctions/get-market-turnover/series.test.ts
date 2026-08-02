@@ -5,6 +5,7 @@ import {
   mergeMarketCumulatives,
   parseTrendsLine,
   pickSeriesDates,
+  scaleSeriesToEndpoint,
   valueAtOrBefore,
 } from "./series";
 
@@ -135,6 +136,23 @@ describe("pickSeriesDates", () => {
       tradeDate: "2026-07-31",
       prevTradeDate: "2026-07-30",
     });
+  });
+});
+
+describe("scaleSeriesToEndpoint", () => {
+  it("preserves shape ratios toward a target endpoint", () => {
+    expect(
+      scaleSeriesToEndpoint(
+        [
+          { t: "09:30", v: 50 },
+          { t: "15:00", v: 100 },
+        ],
+        20,
+      ),
+    ).toEqual([
+      { t: "09:30", v: 10 },
+      { t: "15:00", v: 20 },
+    ]);
   });
 });
 

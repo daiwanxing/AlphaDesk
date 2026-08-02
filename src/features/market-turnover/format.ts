@@ -1,26 +1,28 @@
 const YI = 1e8;
-const WAN_YI = 1e12;
 
-function trimTrailingZeros(n: number): string {
-  const fixed = n.toFixed(1);
-  return fixed.endsWith(".0") ? fixed.slice(0, -2) : fixed;
+/** Shared by NumberFlow + Intl string formatters — integer 亿 + grouping. */
+export const YI_FORMAT_OPTIONS = {
+  maximumFractionDigits: 0,
+  useGrouping: true,
+} as const;
+
+const YI_FORMAT = new Intl.NumberFormat("zh-CN", YI_FORMAT_OPTIONS);
+
+export type AmountParts = {
+  value: number;
+  suffix: "亿";
+};
+
+export function amountParts(yuan: number): AmountParts {
+  return { value: Math.round(yuan / YI), suffix: "亿" };
 }
 
 export function formatAmountYuan(n: number): string {
-  if (n >= WAN_YI) {
-    return `${trimTrailingZeros(n / WAN_YI)}万亿`;
-  }
-  return `${trimTrailingZeros(n / YI)}亿`;
+  return `${YI_FORMAT.format(Math.round(n / YI))}亿`;
 }
 
-export function formatDelta(delta: number, pct: number): string {
-  if (delta === 0) {
-    return `0 (+0.0%)`;
-  }
-
-  const sign = delta > 0 ? "+" : "-";
-  const amount = formatAmountYuan(Math.abs(delta));
-  const pctSign = pct >= 0 ? "+" : "-";
-  const pctValue = (Math.abs(pct) * 100).toFixed(1);
-  return `${sign}${amount} (${pctSign}${pctValue}%)`;
+/** 坐标轴统一「亿」+ 三位分节；0 显示为「0」。 */
+export function formatAmountYi(n: number): string {
+  if (n === 0) return "0";
+  return formatAmountYuan(n);
 }

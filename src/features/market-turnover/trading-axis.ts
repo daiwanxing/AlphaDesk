@@ -37,8 +37,24 @@ export function buildTradingMinuteLabels(): string[] {
   return labels;
 }
 
-/** Align sparse series points to a fixed minute axis; missing minutes become null. */
+/** Align sparse series to a fixed minute axis.
+ * Cumulative amounts: bridge internal gaps with last value (avoids lunch 11:30|13:00 断点白缝);
+ * do not extend past the last observed point (keeps intraday future minutes empty).
+ */
 export function alignSeriesToAxis(axis: string[], points: TurnoverPoint[]): (number | null)[] {
   const byTime = new Map(points.map((point) => [point.t, point.v]));
-  return axis.map((t) => byTime.get(t) ?? null);
+  const lastObserved = points[points.length - 1]?.t;
+  let last: number | null = null;
+
+  return axis.map((t) => {
+    const value = byTime.get(t);
+    if (value !== undefined) {
+      last = value;
+      return value;
+    }
+    if (last != null && lastObserved && t <= lastObserved) {
+      return last;
+    }
+    return null;
+  });
 }

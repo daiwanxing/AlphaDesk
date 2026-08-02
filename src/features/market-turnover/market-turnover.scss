@@ -1,36 +1,64 @@
 .turnover-board {
-  --chart-today: #3b6ea8;
-  --chart-today-fill: rgba(59, 110, 168, 0.15);
-  --chart-prev: #e6a23c;
+  --chart-today: #0265ff;
+  --chart-prev: #f99911;
+  --chart-split: #f0f1f3;
+  --chart-axis: #9ca3af;
 
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  max-inline-size: 960px;
+  gap: var(--space-7);
+  inline-size: 100%;
   container-type: inline-size;
   container-name: turnover;
 
   &__header {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-6);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
   }
 
   &__title {
     margin: 0;
-    font-size: clamp(20px, 2.2vw, 26px);
-    font-weight: 600;
+    font-size: clamp(22px, 2.4vw, 26px);
+    font-weight: var(--weight-bold);
     letter-spacing: var(--tracking-tight);
   }
 
-  &__disclaimer,
+  &__subtitle,
   &__asof,
   &__loading {
     margin: 0;
-    font-size: var(--text-sm);
     color: var(--muted);
+  }
+
+  &__subtitle {
+    font-size: var(--text-base);
+  }
+
+  &__asof,
+  &__loading {
+    font-size: var(--text-sm);
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-5);
+  }
+
+  &__asof {
+    white-space: nowrap;
   }
 
   &__loading {
@@ -39,100 +67,97 @@
   }
 }
 
+%turnover-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+
 .turnover-kpi {
   display: grid;
-  gap: 1px;
+  gap: var(--space-7);
   margin: 0;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: clip;
 
-  @container turnover (min-width: 600px) {
+  @container turnover (min-width: 640px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  &__cell {
+  &__card {
+    @extend %turnover-surface;
     display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    padding-block: 0.9rem;
-    padding-inline: 1rem;
-    background: var(--surface);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-10) var(--space-11);
+
+    /* 三列并排时恢复上下堆叠 */
+    @container turnover (min-width: 640px) {
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
   }
 
   &__label {
-    font-size: var(--text-xs);
+    font-size: var(--text-base);
     color: var(--muted);
+    flex-shrink: 0;
   }
 
   &__value {
     margin: 0;
-    font-size: var(--text-metric);
-    font-weight: 600;
-    letter-spacing: var(--tracking-tight);
-    font-variant-numeric: tabular-nums;
+    font-size: clamp(22px, 2.6vw, 26px);
+    font-weight: var(--weight-bold);
+    line-height: 1.15;
+    text-align: end;
 
-    &.delta {
-      font-size: var(--text-metric);
-      font-weight: 600;
+    number-flow-react {
+      line-height: 0.85;
+    }
+
+    &.is-delta {
+      font-size: clamp(18px, 2.2vw, 22px);
+    }
+
+    @container turnover (min-width: 640px) {
+      text-align: start;
     }
   }
 }
 
-.turnover-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  font-size: var(--text-xs);
+:root[data-supports-dsd] .turnover-kpi__value number-flow-react::part(suffix) {
+  margin-left: 0.06em;
+  font-size: 0.72em;
+}
+
+:root[data-supports-dsd] .turnover-kpi__value:not(.is-delta) number-flow-react::part(suffix) {
   color: var(--muted);
+}
 
-  &__item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+:root[data-supports-dsd] .turnover-kpi__value.is-delta number-flow-react::part(suffix) {
+  color: inherit;
+}
 
-    &::before {
-      content: "";
-      inline-size: 12px;
-      block-size: 2px;
-      background: currentcolor;
-    }
+.turnover-panel {
+  @extend %turnover-surface;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-11) var(--space-11) var(--space-6);
 
-    &--primary::before {
-      background: var(--chart-today);
-    }
-
-    &--prev::before {
-      background: var(--chart-prev);
-    }
+  &__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
   }
 }
 
 .turnover-chart {
   inline-size: 100%;
-  block-size: 240px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  block-size: 280px;
 
   @container turnover (min-width: 720px) {
-    block-size: 320px;
-  }
-}
-
-.delta {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-
-  &--up {
-    color: var(--market-up);
-  }
-
-  &--down {
-    color: var(--market-down);
+    block-size: 360px;
   }
 }
