@@ -1,4 +1,8 @@
 .turnover-board {
+  --chart-today: #3b6ea8;
+  --chart-today-fill: rgba(59, 110, 168, 0.15);
+  --chart-prev: #e6a23c;
+
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
@@ -21,6 +25,7 @@
     letter-spacing: var(--tracking-tight);
   }
 
+  &__disclaimer,
   &__asof,
   &__loading {
     margin: 0;
@@ -34,11 +39,77 @@
   }
 }
 
-.turnover-chart {
-  --chart-today: #3b6ea8;
-  --chart-today-fill: rgba(59, 110, 168, 0.15);
-  --chart-prev: #e6a23c;
+.turnover-kpi {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: clip;
 
+  @container turnover (min-width: 600px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  &__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-block: 0.9rem;
+    padding-inline: 1rem;
+    background: var(--surface);
+  }
+
+  &__label {
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+
+  &__value {
+    margin: 0;
+    font-size: var(--text-metric);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    font-variant-numeric: tabular-nums;
+
+    &.delta {
+      font-size: var(--text-metric);
+      font-weight: 600;
+    }
+  }
+}
+
+.turnover-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: var(--text-xs);
+  color: var(--muted);
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    &::before {
+      content: "";
+      inline-size: 12px;
+      block-size: 2px;
+      background: currentcolor;
+    }
+
+    &--primary::before {
+      background: var(--chart-today);
+    }
+
+    &--prev::before {
+      background: var(--chart-prev);
+    }
+  }
+}
+
+.turnover-chart {
   inline-size: 100%;
   block-size: 240px;
   border: 1px solid var(--border);
@@ -47,54 +118,6 @@
 
   @container turnover (min-width: 720px) {
     block-size: 320px;
-  }
-}
-
-.turnover-grid {
-  display: grid;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: clip;
-
-  @container turnover (min-width: 720px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.turnover-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding-block: 0.9rem;
-  padding-inline: 1rem;
-  background: var(--surface);
-
-  &__head {
-    margin-block-end: 0.25rem;
-  }
-
-  &__title {
-    margin: 0;
-    font-size: var(--text-lg);
-    font-weight: 600;
-    letter-spacing: var(--tracking-snug);
-  }
-
-  &__source,
-  &__label {
-    margin: 0;
-    font-size: var(--text-xs);
-    color: var(--muted);
-  }
-
-  &__amount {
-    margin: 0;
-    font-size: var(--text-metric);
-    font-weight: 600;
-    letter-spacing: var(--tracking-tight);
-    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -112,17 +135,4 @@
   &--down {
     color: var(--market-down);
   }
-}
-
-.turnover-total {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 0.9rem;
-  padding-inline: 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
 }

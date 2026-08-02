@@ -1,6 +1,8 @@
 import { formatAmountYuan, formatDelta } from "../format";
-import type { MarketSession, MarketTurnoverMarket, MarketTurnoverResponse } from "../types";
+import { kpiLabels } from "../kpi-labels";
+import type { MarketSession, MarketTurnoverResponse, TurnoverPoint } from "../types";
 import "../market-turnover.scss";
+import { IntradayTurnoverChart } from "./IntradayTurnoverChart";
 
 const SESSION_META: Record<MarketSession, { label: string; tagClass: string }> = {
   continuous: { label: "盘中", tagClass: "tag tag--success" },
@@ -9,6 +11,8 @@ const SESSION_META: Record<MarketSession, { label: string; tagClass: string }> =
   weekend: { label: "周末休市", tagClass: "tag" },
   pre_open: { label: "未开盘", tagClass: "tag tag--info" },
 };
+
+const EMPTY_POINTS: TurnoverPoint[] = [];
 
 type TurnoverBoardProps = {
   data: MarketTurnoverResponse | null;
@@ -24,39 +28,22 @@ function deltaTone(delta: number): string {
   return "delta";
 }
 
-function amountLabel(session: MarketSession, snapshotTradeDate?: string): string {
-  if (session === "weekend") {
-    return snapshotTradeDate ? `上交易日（${snapshotTradeDate}）成交额` : "上交易日成交额";
-  }
-  if (session === "closed") {
-    return "本日全天成交额";
-  }
-  return "今日成交额";
+function shortDate(tradeDate: string | undefined): string | null {
+  const matched = /^\d{4}-(\d{2})-(\d{2})$/.exec(tradeDate ?? "");
+  return matched ? `${matched[1]}-${matched[2]}` : null;
 }
 
-function MarketCard({
-  market,
-  session,
-  snapshotTradeDate,
-}: {
-  market: MarketTurnoverMarket;
-  session: MarketSession;
-  snapshotTradeDate?: string;
-}) {
-  const isSz = market.id === "sz";
-  const sourceNote = isSz ? `${market.source} · 成指口径` : market.source;
+function seriesLabels(session: MarketSession, data: MarketTurnoverResponse) {
+  const snapshot = session === "weekend" || session === "pre_open";
+  const primaryWord = snapshot ? "上交易日" : "今日";
+  const prevWord = snapshot ? "再上一日" : "昨日";
+  const primaryDate = shortDate(data.series?.tradeDate);
+  const prevDate = shortDate(data.series?.prevTradeDate);
 
-  return (
-    <article className="turnover-card">
-      <header className="turnover-card__head">
-        <h2 className="turnover-card__title">{market.label}</h2>
-        <p className="turnover-card__source">{sourceNote}</p>
-      </header>
-      <p className="turnover-card__label">{amountLabel(session, snapshotTradeDate)}</p>
-      <p className="turnover-card__amount num">{formatAmountYuan(market.amount)}</p>
-      <p className={deltaTone(market.delta)}>较上日 {formatDelta(market.delta, market.deltaPct)}</p>
-    </article>
-  );
+  return {
+    primaryLabel: primaryDate ? `${primaryWord} ${primaryDate}` : primaryWord,
+    prevLabel: prevDate ? `${prevWord} ${prevDate}` : prevWord,
+  };
 }
 
 export function TurnoverBoard({ data, session, loading, error, configError }: TurnoverBoardProps) {
@@ -88,35 +75,60 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
 
       {showInitialSpinner && <p className="turnover-board__loading">加载成交额…</p>}
 
-      {data && (
-        <>
-          <div className="turnover-grid">
-            {data.markets.map((market) => (
-              <MarketCard
-                key={market.id}
-                market={market}
-                session={session}
-                snapshotTradeDate={data.snapshotTradeDate}
-              />
-            ))}
-          </div>
-
-          <div className="turnover-total">
-            <div>
-              <p className="turnover-card__label">沪深京合计</p>
-              <p className="turnover-card__amount num">{formatAmountYuan(data.total.amount)}</p>
-            </div>
-            <p className={deltaTone(data.total.delta)}>
-              较上日 {formatDelta(data.total.delta, data.total.deltaPct)}
-            </p>
-          </div>
-
-          <p className="turnover-board__asof num">
-            数据更新时间：
-            {new Date(data.asOf).toLocaleString("zh-CN", { hour12: false })}
-          </p>
-        </>
-      )}
+      {data && <TurnoverBody data={data} session={session} />}
     </div>
+  );
+}
+
+function TurnoverBody({ data, session }: { data: MarketTurnoverResponse; session: MarketSession }) {
+  const labels = kpiLabels(session);
+  const { primaryLabel, prevLabel } = seriesLabels(session, data);
+  const today = data.series?.today ?? EMPTY_POINTS;
+  const prev = data.series?.prev ?? EMPTY_POINTS;
+  const showPrev = data.compareMode === "vs_prev_same_time" && prev.length > 0;
+
+  return (
+    <>
+      {data.disclaimer && <p className="turnover-board__disclaimer">{data.disclaimer}</p>}
+
+      <dl className="turnover-kpi">
+        <div className="turnover-kpi__cell">
+          <dt className="turnover-kpi__label">{labels.primary}</dt>
+          <dd className="turnover-kpi__value num">{formatAmountYuan(data.total.amount)}</dd>
+        </div>
+        <div className="turnover-kpi__cell">
+          <dt className="turnover-kpi__label">{labels.secondary}</dt>
+          <dd className="turnover-kpi__value num">
+            {formatAmountYuan(data.total.prevFullDayAmount)}
+          </dd>
+        </div>
+        <div className="turnover-kpi__cell">
+          <dt className="turnover-kpi__label">{labels.delta}</dt>
+          <dd className={`turnover-kpi__value ${deltaTone(data.total.delta)}`}>
+            {formatDelta(data.total.delta, data.total.deltaPct)}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="turnover-legend">
+        <span className="turnover-legend__item turnover-legend__item--primary">{primaryLabel}</span>
+        {showPrev && (
+          <span className="turnover-legend__item turnover-legend__item--prev">{prevLabel}</span>
+        )}
+      </div>
+
+      <IntradayTurnoverChart
+        prev={prev}
+        prevLabel={prevLabel}
+        primaryLabel={primaryLabel}
+        showPrev={showPrev}
+        today={today}
+      />
+
+      <p className="turnover-board__asof num">
+        数据更新时间：
+        {new Date(data.asOf).toLocaleString("zh-CN", { hour12: false })}
+      </p>
+    </>
   );
 }
