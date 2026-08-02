@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TurnoverRouteImport } from './routes/turnover'
 import { Route as EventsEventIdRouteImport } from './routes/events/$eventId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TurnoverRoute = TurnoverRouteImport.update({
+  id: '/turnover',
+  path: '/turnover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsEventIdRoute = EventsEventIdRouteImport.update({
@@ -25,27 +31,31 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/turnover': typeof TurnoverRoute
   '/events/$eventId': typeof EventsEventIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/turnover': typeof TurnoverRoute
   '/events/$eventId': typeof EventsEventIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/turnover': typeof TurnoverRoute
   '/events/$eventId': typeof EventsEventIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/events/$eventId'
+  fullPaths: '/' | '/turnover' | '/events/$eventId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/events/$eventId'
-  id: '__root__' | '/' | '/events/$eventId'
+  to: '/' | '/turnover' | '/events/$eventId'
+  id: '__root__' | '/' | '/turnover' | '/events/$eventId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  TurnoverRoute: typeof TurnoverRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/turnover': {
+      id: '/turnover'
+      path: '/turnover'
+      fullPath: '/turnover'
+      preLoaderRoute: typeof TurnoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events/$eventId': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  TurnoverRoute: TurnoverRoute,
   EventsEventIdRoute: EventsEventIdRoute,
 }
 export const routeTree = rootRouteImport

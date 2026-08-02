@@ -28,7 +28,7 @@ describe("EventTrackPage", () => {
     );
 
     renderApp();
-    expect(await screen.findByText(/事件追踪 · 七姐妹 & FOMC/i)).toBeInTheDocument();
+    expect(await screen.findByText(/事件追踪 · A股量能/i)).toBeInTheDocument();
     expect(await screen.findByText(/该年份暂无事件数据/i)).toBeInTheDocument();
 
     vi.unstubAllGlobals();

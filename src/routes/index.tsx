@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { fetchTimeline, requestBriefBackfill } from "@/features/event-track/api";
-import { EventTimeline, StatsBar, TimelineSkeleton } from "@/features/event-track/components/EventTimeline";
+import {
+  EventTimeline,
+  StatsBar,
+  TimelineSkeleton,
+} from "@/features/event-track/components/EventTimeline";
 import { MAG7_TICKERS, type TimelineResponse } from "@/features/event-track/types";
-import "@/features/event-track/event-track.scss";
 
 type HomeSearch = {
   year?: number;
@@ -101,8 +104,8 @@ function EventTrackPage() {
       {data && !loading && !error && (
         <>
           <p className="event-track__note muted">
-            已披露：主链公司 IR；SEC EDGAR 供核对。待披露日程来自 Nasdaq Calendar。FOMC 来自
-            Federal Reserve。预计日仅供参考。
+            已披露：主链公司 IR；SEC EDGAR 供核对。待披露日程来自 Nasdaq Calendar。FOMC 来自 Federal
+            Reserve。预计日仅供参考。
           </p>
           <EventTimeline events={data.events} year={year} tickerFilter={ticker} />
           <p className="event-track__updated muted">
