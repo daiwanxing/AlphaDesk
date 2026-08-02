@@ -1,0 +1,95 @@
+.loading {
+  --loading-ink: var(--fg);
+  --loading-base: color-mix(in oklch, var(--loading-ink) 24%, transparent);
+  --loading-framed-path: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--loading-ink);
+  white-space: nowrap;
+
+  &--tone-light {
+    --loading-ink: var(--surface);
+    --loading-base: color-mix(in oklch, var(--surface) 24%, transparent);
+    --loading-framed-path: var(--fg);
+  }
+
+  &--framed {
+    .loading__frame {
+      fill: var(--loading-ink);
+    }
+
+    .loading__base,
+    .loading__active {
+      stroke: var(--loading-framed-path);
+    }
+  }
+
+  &--inline {
+    gap: 0.4rem;
+
+    .loading__mark {
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    .loading__label {
+      font-size: var(--text-sm);
+    }
+  }
+
+  &--page {
+    .loading__mark {
+      inline-size: 32px;
+      block-size: 32px;
+    }
+  }
+
+  &--boot {
+    gap: 0.7rem;
+
+    .loading__mark {
+      inline-size: 48px;
+      block-size: 48px;
+    }
+
+    .loading__label {
+      font-size: var(--text-md);
+    }
+  }
+}
+
+.loading__mark {
+  display: block;
+  flex: 0 0 auto;
+  inline-size: 32px;
+  block-size: 32px;
+  overflow: visible;
+}
+
+.loading__frame,
+.loading__base,
+.loading__active {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.loading__frame {
+  stroke: none;
+}
+
+.loading__base,
+.loading__active {
+  stroke: var(--loading-ink);
+}
+
+.loading__base {
+  stroke: var(--loading-base);
+}
+
+.loading__label {
+  color: currentColor;
+  font-size: var(--text-base);
+}

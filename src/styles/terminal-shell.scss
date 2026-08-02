@@ -213,6 +213,7 @@ button {
 }
 
 .content-pane {
+  position: relative;
   min-inline-size: 0;
   min-block-size: 0;
   overflow: auto;

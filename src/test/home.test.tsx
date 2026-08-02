@@ -36,6 +36,7 @@ describe("EventTrackPage", () => {
       "href",
       "/events",
     );
+    expect(screen.getByRole("main")).toHaveAttribute("data-scroll-restoration-id", "content-pane");
     expect(await screen.findByText(/该年份暂无事件数据/i)).toBeInTheDocument();
 
     vi.unstubAllGlobals();

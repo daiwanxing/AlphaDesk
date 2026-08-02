@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { fetchBriefs, fetchEventDetail, formatDisplayDate } from "@/features/event-track/api";
 import { mergeBriefCards } from "@/features/event-track/briefs";
@@ -26,6 +26,8 @@ export const Route = createFileRoute("/events/$eventId")({
 function EventDetailPage() {
   const { eventId } = Route.useParams();
   const year = Route.useSearch().year ?? new Date().getFullYear();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
   const [data, setData] = useState<EventDetailResponse | null>(null);
   const [briefCards, setBriefCards] = useState<BriefCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,16 @@ function EventDetailPage() {
 
   return (
     <div className="event-detail">
-      <Link to="/events" search={{ year }} className="back-link">
+      <Link
+        to="/events"
+        search={{ year }}
+        className="back-link"
+        onClick={(event) => {
+          if (!canGoBack) return;
+          event.preventDefault();
+          router.history.back();
+        }}
+      >
         ← 返回时间线
       </Link>
 

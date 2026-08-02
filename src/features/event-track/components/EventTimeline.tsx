@@ -131,35 +131,3 @@ export function StatsBar({
     </div>
   );
 }
-
-export function TimelineSkeleton() {
-  const sections = [{ cards: 2 }, { cards: 3 }] as const;
-
-  return (
-    <div className="timeline-skeleton" aria-hidden="true">
-      {sections.map((section, s) => (
-        <section key={s} className="timeline-skeleton__day">
-          <div className="skeleton-shimmer timeline-skeleton__day-label" />
-          <ul className="timeline-list">
-            {Array.from({ length: section.cards }).map((_, i) => (
-              <li key={i} className="event-card-grid timeline-skeleton__card">
-                <span className="event-card-grid__logo">
-                  <span className="timeline-skeleton__fill" />
-                </span>
-                <span className="event-card-grid__main">
-                  <span className="timeline-skeleton__fill timeline-skeleton__title" />
-                  <span className="timeline-skeleton__fill timeline-skeleton__chip" />
-                  <span className="timeline-skeleton__fill timeline-skeleton__chip timeline-skeleton__chip--short" />
-                </span>
-                <span className="event-card-grid__aside">
-                  <span className="timeline-skeleton__fill timeline-skeleton__date" />
-                  <span className="timeline-skeleton__fill timeline-skeleton__relative" />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
-  );
-}

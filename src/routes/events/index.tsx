@@ -1,11 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useElementScrollRestoration } from "@tanstack/react-router";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { fetchTimeline, requestBriefBackfill } from "@/features/event-track/api";
-import {
-  EventTimeline,
-  StatsBar,
-  TimelineSkeleton,
-} from "@/features/event-track/components/EventTimeline";
+import { EventTimeline, StatsBar } from "@/features/event-track/components/EventTimeline";
+import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
 import { MAG7_TICKERS, type TimelineResponse } from "@/features/event-track/types";
 import "@/features/event-track/event-track.scss";
 
@@ -27,9 +24,20 @@ function EventTrackPage() {
   const year = search.year ?? new Date().getFullYear();
   const ticker = search.ticker ?? "all";
   const navigate = Route.useNavigate();
+  const scrollEntry = useElementScrollRestoration({ id: "content-pane" });
   const [data, setData] = useState<TimelineResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const pane = document.querySelector<HTMLElement>(".content-pane");
+    const target = scrollEntry?.scrollY;
+    if (!pane || loading || !data || target == null) return;
+
+    const maxScrollTop = Math.max(0, pane.scrollHeight - pane.clientHeight);
+    const restoredScrollTop = Math.min(target, maxScrollTop);
+    pane.scrollTop = restoredScrollTop;
+  }, [data, loading, scrollEntry?.scrollY]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +65,7 @@ function EventTrackPage() {
 
   return (
     <div className="event-track">
+      <LoadingOverlay loading={loading} label="加载事件追踪…" />
       <header className="event-track__toolbar">
         <div className="event-track__filters">
           <label className="filter">
@@ -98,7 +107,6 @@ function EventTrackPage() {
         {data && <StatsBar meta={data.meta} />}
       </header>
 
-      {loading && <TimelineSkeleton />}
       {!loading && error && (
         <div className="note-box note-box--danger" role="alert">
           <p className="note-box__title">加载失败</p>

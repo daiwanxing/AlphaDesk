@@ -114,7 +114,7 @@ function RootLayout() {
             </button>
           </div>
         </nav>
-        <main className="content-pane">
+        <main className="content-pane" data-scroll-restoration-id="content-pane">
           <Outlet />
         </main>
       </div>

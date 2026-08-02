@@ -1,6 +1,7 @@
 import { TURNOVER_LABELS } from "../labels";
 import { isSnapshotSession } from "../session";
 import type { MarketSession, MarketTurnoverResponse, TurnoverPoint } from "../types";
+import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
 import "../market-turnover.scss";
 import { AmountFlow, DeltaFlow } from "./AmountFlow";
 import { IntradayTurnoverChart } from "./IntradayTurnoverChart";
@@ -46,6 +47,7 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
 
   return (
     <div className="turnover-board">
+      <LoadingOverlay loading={showInitialSpinner} label="加载成交额…" />
       <header className="turnover-board__header">
         <div className="turnover-board__heading">
           <h1 className="turnover-board__title">A股量能</h1>
@@ -77,8 +79,6 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
           </p>
         </div>
       )}
-
-      {showInitialSpinner && <p className="turnover-board__loading">加载成交额…</p>}
 
       {data && <TurnoverBody data={data} />}
     </div>
