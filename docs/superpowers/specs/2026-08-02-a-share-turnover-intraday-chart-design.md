@@ -1,7 +1,7 @@
 # A 股量能 — 合计分时累计对比图（同花顺向）
 
 **日期：** 2026-08-02  
-**状态：** 草案（头脑风暴已对齐，待用户审阅后写实现计划）  
+**状态：** 已实现于分支 `feature/turnover-intraday-chart`（待部署云函数 + 手验）  
 **文档类型：** 技术设计（HOW）  
 **前置文档：** `docs/superpowers/specs/2026-08-02-a-share-market-turnover-design.md`（入口、云函数代理、会话态、三市轻量口径仍有效）  
 **平台：** 腾讯云 CloudBase HTTP 云函数 + Vite/React 静态前端
