@@ -14,6 +14,12 @@ const ULIST_HOSTS = ["https://push2delay.eastmoney.com", "https://push2.eastmone
 
 const KLINE_HOSTS = ["https://push2his.eastmoney.com", "https://push2delay.eastmoney.com"] as const;
 
+const TRENDS2_HOSTS = [
+  "https://push2delay.eastmoney.com",
+  "https://push2.eastmoney.com",
+  "https://push2his.eastmoney.com",
+] as const;
+
 const SECID_TO_TX_SYMBOL: Record<string, string> = {
   "1.000001": "sh000001",
   "0.399001": "sz399001",
@@ -54,6 +60,11 @@ type UlistBody = {
 type KlineBody = {
   rc?: number;
   data?: { klines?: string[] };
+};
+
+type Trends2Body = {
+  rc?: number;
+  data?: { trends?: string[] };
 };
 
 type TencentKlineBody = {
@@ -101,6 +112,15 @@ function buildKlineUrl(host: string, secId: string, limit: number): string {
     `&klt=101&fqt=1&lmt=${limit}&end=20500000` +
     "&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61" +
     `&ut=${KLINE_UT}`
+  );
+}
+
+function buildTrends2Url(host: string, secId: string, ndays: 1 | 2): string {
+  return (
+    `${host}/api/qt/stock/trends2/get?secid=${encodeURIComponent(secId)}` +
+    "&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13" +
+    "&fields2=f51,f52,f53,f54,f55,f56,f57,f58" +
+    `&iscr=0&ndays=${ndays}&ut=${KLINE_UT}`
   );
 }
 
@@ -224,6 +244,30 @@ async function fetchTencentDailyKlines(secId: string, limit: number): Promise<Kl
   const url = buildTencentKlineUrl(secId, limit);
   const body = await fetchJson<TencentKlineBody>(url, "Tencent");
   return parseTencentKlineBody(body, secId, txSymbol);
+}
+
+function parseTrends2Body(body: Trends2Body, secId: string): string[] {
+  if (body.rc !== 0 || !body.data?.trends?.length) {
+    throw new Error(`trends2 empty or invalid for ${secId}`);
+  }
+  return body.data.trends;
+}
+
+export async function fetchTrends2(secId: string, ndays: 1 | 2): Promise<string[]> {
+  const errors: string[] = [];
+
+  for (const host of TRENDS2_HOSTS) {
+    const url = buildTrends2Url(host, secId, ndays);
+    try {
+      const body = await fetchJson<Trends2Body>(url, "Eastmoney");
+      return parseTrends2Body(body, secId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(message);
+    }
+  }
+
+  throw new Error(`Eastmoney trends2 all hosts failed for ${secId}: ${errors.join("; ")}`);
 }
 
 export async function fetchDailyKlines(secId: string, limit = 10): Promise<KlineBar[]> {
