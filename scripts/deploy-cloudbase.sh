@@ -10,7 +10,7 @@ ENV_ID="${TCB_ENV_ID:-trader-d4gl4d7a1cb6baebb}"
 CF_ROOT="$ROOT/cloudfunctions"
 MODE="${1:-all}" # all | hosting | functions
 
-HTTP_FNS=(get-events get-briefs trigger-backfill)
+HTTP_FNS=(get-events get-briefs get-market-turnover trigger-backfill)
 EVENT_FNS=(detect-new-materials generate-brief)
 ALL_FNS=("${HTTP_FNS[@]}" "${EVENT_FNS[@]}")
 

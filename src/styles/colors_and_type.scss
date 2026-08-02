@@ -1,0 +1,149 @@
+/**
+ * AlphaDesk Terminal — colors & typography foundations
+ * Source: 投研终端骨架畅想 (research-terminal-shell-2.html :root)
+ *
+ * Canonical source values are OKLch; sRGB hex anchors included for
+ * engines/tools that inspect concrete #rrggbb tokens.
+ */
+
+:root {
+  /* —— Core six (Open Design contract) —— */
+  --bg: #f4f6f8; /* oklch(98% 0.005 250) */
+  --surface: #ffffff; /* oklch(100% 0 0) */
+  --fg: #1c2430; /* oklch(22% 0.02 240) */
+  --muted: #6b7380; /* oklch(50% 0.018 240) */
+  --border: #e1e5eb; /* oklch(90% 0.008 240) */
+  --accent: #2d9a5b; /* oklch(58% 0.16 145) */
+
+  /* OKLch mirrors (prefer in modern browsers when overriding) */
+  --bg-oklch: oklch(98% 0.005 250);
+  --surface-oklch: oklch(100% 0 0);
+  --fg-oklch: oklch(22% 0.02 240);
+  --muted-oklch: oklch(50% 0.018 240);
+  --border-oklch: oklch(90% 0.008 240);
+  --accent-oklch: oklch(58% 0.16 145);
+
+  /* —— Semantic status —— */
+  --success: #2a8a4a; /* oklch(52% 0.14 150) */
+  --warn: #c48a1a; /* oklch(62% 0.14 75) */
+  --danger: #c43c2e; /* oklch(52% 0.18 25) */
+  --info: #3a6fbf; /* oklch(52% 0.12 250) */
+
+  --success-oklch: oklch(52% 0.14 150);
+  --warn-oklch: oklch(62% 0.14 75);
+  --danger-oklch: oklch(52% 0.18 25);
+  --info-oklch: oklch(52% 0.12 250);
+
+  /* —— Derived surfaces / selection —— */
+  --accent-soft: rgba(45, 154, 91, 0.1);
+  --accent-softer: rgba(45, 154, 91, 0.07);
+  --accent-border: #9fd4b0;
+  --selection-bg: var(--accent-softer);
+  --hover-bg: var(--bg);
+  --avatar-bg: #e6eaf0;
+  --overlay: rgba(28, 36, 48, 0.28);
+  --success-ring: rgba(42, 138, 74, 0.18);
+  --success-soft: rgba(42, 138, 74, 0.08);
+  --danger-soft: rgba(196, 60, 46, 0.08);
+  --warn-soft: rgba(196, 138, 26, 0.1);
+  --info-soft: rgba(58, 111, 191, 0.07);
+  --accent-check: #1f6b3d;
+
+  /* —— Type stacks —— */
+  --font-display: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* —— Type scale —— */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: clamp(20px, 2.2vw, 26px);
+  --text-metric: 20px;
+
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-body: 1.5;
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.015em;
+  --tracking-label: 0.08em;
+  --tracking-tag: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 510;
+  --weight-semibold: 550;
+  --weight-bold: 600;
+}
+
+@supports (color: oklch(50% 0.1 150)) {
+  :root {
+    --bg: oklch(98% 0.005 250);
+    --surface: oklch(100% 0 0);
+    --fg: oklch(22% 0.02 240);
+    --muted: oklch(50% 0.018 240);
+    --border: oklch(90% 0.008 240);
+    --accent: oklch(58% 0.16 145);
+    --success: oklch(52% 0.14 150);
+    --warn: oklch(62% 0.14 75);
+    --danger: oklch(52% 0.18 25);
+    --info: oklch(52% 0.12 250);
+    --accent-soft: oklch(58% 0.16 145 / 0.1);
+    --accent-softer: oklch(58% 0.16 145 / 0.07);
+    --accent-border: oklch(80% 0.04 145);
+    --avatar-bg: oklch(92% 0.01 250);
+    --overlay: oklch(22% 0.02 240 / 0.28);
+    --success-ring: oklch(52% 0.14 150 / 0.18);
+    --success-soft: oklch(52% 0.14 150 / 0.08);
+    --danger-soft: oklch(52% 0.18 25 / 0.08);
+    --warn-soft: oklch(62% 0.14 75 / 0.1);
+    --info-soft: oklch(52% 0.12 250 / 0.07);
+    --accent-check: oklch(40% 0.1 145);
+  }
+}
+
+.od-type-root,
+html.od-terminal {
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.od-display {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.od-mono,
+.od-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.od-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.od-muted {
+  color: var(--muted);
+}
+
+.od-up {
+  color: var(--success);
+}
+
+.od-down {
+  color: var(--danger);
+}

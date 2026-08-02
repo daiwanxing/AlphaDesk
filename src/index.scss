@@ -1,59 +1,157 @@
+@use "./styles/colors_and_type.scss";
+@use "./styles/tokens.scss";
+@use "./styles/terminal-shell.scss";
+
+/* Baseline: vite browserTargets chrome121 / firefox122 / safari17.3 */
+
 :root {
-  --text: #64748b;
-  --text-h: #0f172a;
-  --bg: #f8fafc;
-  --border: #e2e8f0;
-  --code-bg: #f1f5f9;
-  --accent: #4f46e5;
-  --accent-bg: rgba(79, 70, 229, 0.08);
-  --accent-border: rgba(79, 70, 229, 0.35);
-  --shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-
-  --sans: "SF Pro Text", system-ui, -apple-system, sans-serif;
-  --heading: var(--sans);
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
-
-  font: 16px/1.5 var(--sans);
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+  --text: var(--muted);
+  --text-h: var(--fg);
+  --accent-bg: var(--accent-soft);
+  --code-bg: oklch(96% 0.006 250);
+  --shadow: var(--shadow-dropdown);
+  --sans: var(--font-body);
+  --heading: var(--font-display);
+  --mono: var(--font-mono);
+  --radius-tag: var(--radius-xs);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #94a3b8;
-    --text-h: #f1f5f9;
-    --bg: #0b1120;
-    --border: #1e293b;
-    --code-bg: #111827;
-    --accent: #818cf8;
-    --accent-bg: rgba(129, 140, 248, 0.12);
-    --accent-border: rgba(129, 140, 248, 0.4);
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  }
-}
-
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-}
-
-#root {
-  min-height: 100svh;
-}
-
-h1,
-h2,
-h3 {
-  font-family: var(--heading);
-  color: var(--text-h);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
 a {
   color: var(--accent);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.num,
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-2xs);
+  font-weight: 550;
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  padding-block: 1px;
+  padding-inline: 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--bg);
+  white-space: nowrap;
+
+  &--success {
+    color: var(--success);
+    border-color: color-mix(in oklch, var(--success) 35%, transparent);
+    background: color-mix(in oklch, var(--success) 8%, transparent);
+  }
+
+  &--warn {
+    color: var(--warn);
+    border-color: color-mix(in oklch, var(--warn) 35%, transparent);
+    background: color-mix(in oklch, var(--warn) 10%, transparent);
+  }
+
+  &--danger {
+    color: var(--danger);
+    border-color: color-mix(in oklch, var(--danger) 30%, transparent);
+    background: color-mix(in oklch, var(--danger) 8%, transparent);
+  }
+
+  &--info {
+    color: var(--info);
+    border-color: color-mix(in oklch, var(--info) 30%, transparent);
+    background: color-mix(in oklch, var(--info) 8%, transparent);
+  }
+
+  &--pending {
+    color: var(--muted);
+  }
+}
+
+.note-box {
+  padding-block: 0.75rem;
+  padding-inline: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: var(--text-base);
+
+  &--danger {
+    border-color: color-mix(in oklch, var(--danger) 35%, transparent);
+    background: var(--danger-soft);
+  }
+
+  &--warn {
+    border-color: color-mix(in oklch, var(--warn) 40%, transparent);
+    background: var(--warn-soft);
+  }
+
+  &__title {
+    margin: 0 0 0.2rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  &__body {
+    margin: 0;
+    color: var(--muted);
+  }
+}
+
+.skeleton-row {
+  block-size: 72px;
+  margin: 0;
+  border-block-end: 1px solid var(--border);
+  background: linear-gradient(90deg, var(--bg) 0%, var(--surface) 45%, var(--bg) 100%);
+  background-size: 200% 100%;
+  animation: terminal-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes terminal-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-row {
+    animation: none;
+  }
 }

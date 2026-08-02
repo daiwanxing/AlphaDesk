@@ -1,0 +1,9 @@
+{
+  "name": "get-market-turnover",
+  "version": "1.0.0",
+  "description": "A股沪深京成交额 HTTP 接口",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

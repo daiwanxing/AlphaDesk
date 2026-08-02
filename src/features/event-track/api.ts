@@ -1,4 +1,5 @@
 import type { BriefDoc, EventDetailResponse, TimelineResponse } from "./types";
+import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
 
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -9,8 +10,7 @@ async function parseJson<T>(res: Response): Promise<T> {
 }
 
 function eventsBase(): string {
-  const base = import.meta.env.VITE_CLOUDBASE_EVENTS_URL as string | undefined;
-  return base?.replace(/\/$/, "") ?? "";
+  return cloudbaseUrl(CLOUDBASE_PATHS.events) ?? "";
 }
 
 function timelineListUrl(year: number): string {
@@ -31,17 +31,14 @@ export async function fetchTimeline(year: number): Promise<TimelineResponse> {
   return parseJson<TimelineResponse>(res);
 }
 
-export async function fetchEventDetail(
-  year: number,
-  id: string,
-): Promise<EventDetailResponse> {
+export async function fetchEventDetail(year: number, id: string): Promise<EventDetailResponse> {
   const res = await fetch(timelineDetailUrl(year, id));
   return parseJson<EventDetailResponse>(res);
 }
 
 /** 无云 URL 时返回空列表，由状态合成显示占位/撰写中 */
 export async function fetchBriefs(eventId: string): Promise<{ briefs: BriefDoc[] }> {
-  const base = import.meta.env.VITE_CLOUDBASE_BRIEFS_URL as string | undefined;
+  const base = cloudbaseUrl(CLOUDBASE_PATHS.briefs);
   if (!base) {
     return { briefs: [] };
   }
@@ -52,7 +49,7 @@ export async function fetchBriefs(eventId: string): Promise<{ briefs: BriefDoc[]
 
 /** 切历史年时点火 backfill；未配置则跳过，失败不影响时间线 */
 export async function requestBriefBackfill(year: number): Promise<void> {
-  const base = import.meta.env.VITE_CLOUDBASE_BACKFILL_URL as string | undefined;
+  const base = cloudbaseUrl(CLOUDBASE_PATHS.backfill);
   const key = import.meta.env.VITE_BRIEF_API_KEY as string | undefined;
   if (!base || !key) return;
   await fetch(base, {
@@ -65,19 +62,15 @@ export async function requestBriefBackfill(year: number): Promise<void> {
   });
 }
 
-export function eventSortDate(event: TimelineResponse["events"][number]): string {
+export function eventDisplayDate(event: TimelineResponse["events"][number]): string {
   if (event.kind === "earnings") {
     return event.actualDate ?? event.scheduledDate ?? "9999-12-31";
   }
   return event.meetingEndDate;
 }
 
-export function eventDisplayDate(event: TimelineResponse["events"][number]): string {
-  return eventSortDate(event);
-}
-
 export function formatDisplayDate(iso: string): string {
-  const d = new Date(iso + (iso.length === 10 ? "T12:00:00" : ""));
+  const d = new Date(iso.length === 10 ? iso + "T12:00:00" : iso);
   return d.toLocaleDateString("zh-CN", {
     year: "numeric",
     month: "short",

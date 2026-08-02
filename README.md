@@ -36,7 +36,7 @@ pnpm deploy:cloudbase
 
 控制台：[静态网站托管](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/static-hosting) · [云函数](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/scf)
 
-**本地开发：** `.env.local` 中 `VITE_CLOUDBASE_*` 留空时，时间线走 Vite `/api` 中间件；也可填云端 URL 或配合同源代理 `/cloudbase-events`。
+**本地开发：** `.env.local` 中 `VITE_CLOUDBASE_API_BASE` 留空时，时间线走 Vite `/api` 中间件；设为 `/cloudbase` 则经 Vite 单一 proxy 转发全部 HTTP 云函数（如 `/cloudbase/get-events`）；生产填网关 origin。
 
 ## CI/CD（GitHub → CloudBase）
 

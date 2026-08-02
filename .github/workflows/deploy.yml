@@ -26,9 +26,7 @@ jobs:
     env:
       CI: "true"
       TCB_ENV_ID: trader-d4gl4d7a1cb6baebb
-      VITE_CLOUDBASE_EVENTS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-events
-      VITE_CLOUDBASE_BRIEFS_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/get-briefs
-      VITE_CLOUDBASE_BACKFILL_URL: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com/trigger-backfill
+      VITE_CLOUDBASE_API_BASE: https://trader-d4gl4d7a1cb6baebb-1301814349.tcloudbaseapp.com
       VITE_BRIEF_API_KEY: ${{ secrets.VITE_BRIEF_API_KEY }}
 
     steps:

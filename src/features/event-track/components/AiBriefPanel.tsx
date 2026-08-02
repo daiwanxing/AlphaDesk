@@ -1,13 +1,7 @@
 import { formatDisplayDate } from "../api";
+import { SLOT_LABEL } from "../labels";
 import type { BriefCard } from "../briefs";
-import type { BriefSlot, ProductBriefCardState } from "../types";
-
-const SLOT_LABEL: Record<BriefSlot, string> = {
-  earnings: "财报",
-  statement: "Statement",
-  minutes: "Minutes",
-  sep: "SEP / 点阵图",
-};
+import type { ProductBriefCardState } from "../types";
 
 type AiBriefPanelProps = {
   cards: BriefCard[];

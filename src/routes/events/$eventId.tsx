@@ -4,6 +4,11 @@ import { fetchBriefs, fetchEventDetail, formatDisplayDate } from "@/features/eve
 import { mergeBriefCards } from "@/features/event-track/briefs";
 import type { BriefCard } from "@/features/event-track/briefs";
 import { AiBriefPanel } from "@/features/event-track/components/AiBriefPanel";
+import {
+  EARNINGS_STATUS_LABEL,
+  FOMC_STATUS_LABEL,
+  SLOT_LABEL,
+} from "@/features/event-track/labels";
 import type { BriefDoc, EventDetailResponse } from "@/features/event-track/types";
 import "@/features/event-track/event-track.scss";
 
@@ -72,7 +77,7 @@ function EventDetailPage() {
 
   return (
     <div className="event-detail">
-      <Link to="/" search={{ year }} className="back-link">
+      <Link to="/events" search={{ year }} className="back-link">
         ← 返回时间线
       </Link>
 
@@ -91,7 +96,7 @@ function EventDetailPage() {
             <h2>固定信息</h2>
             <dl className="detail-dl">
               <dt>状态</dt>
-              <dd>{event.status === "disclosed" ? "已披露" : "待披露"}</dd>
+              <dd>{EARNINGS_STATUS_LABEL[event.status]}</dd>
               {event.scheduledDate && (
                 <>
                   <dt>预计披露日</dt>
@@ -189,7 +194,7 @@ function EventDetailPage() {
             <h2>固定信息</h2>
             <dl className="detail-dl">
               <dt>状态</dt>
-              <dd>{event.status === "held" ? "已召开" : "待召开"}</dd>
+              <dd>{FOMC_STATUS_LABEL[event.status]}</dd>
               <dt>会议日期</dt>
               <dd>{formatDisplayDate(event.meetingEndDate)}</dd>
               <dt>数据来源</dt>
@@ -204,18 +209,13 @@ function EventDetailPage() {
             <ul className="material-list">
               {(["statement", "minutes", "sep"] as const).map((kind) => {
                 const items = event.materials.filter((m) => m.kind === kind);
-                const label =
-                  kind === "statement"
-                    ? "Statement"
-                    : kind === "minutes"
-                      ? "Minutes"
-                      : "SEP / 点阵图";
+                const label = SLOT_LABEL[kind];
                 const published = items.some((i) => i.published);
                 return (
                   <li key={kind} className="material-group">
                     <div className="material-group__head">
                       <strong>{label}</strong>
-                      <span className={published ? "tag tag--ok" : "tag tag--pending"}>
+                      <span className={published ? "tag tag--success" : "tag tag--pending"}>
                         {published
                           ? "已发布"
                           : kind === "sep" && event.status === "held"

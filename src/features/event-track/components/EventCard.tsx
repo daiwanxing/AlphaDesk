@@ -1,53 +1,87 @@
-import clsx from "clsx";
 import { Link } from "@tanstack/react-router";
+import clsx from "clsx";
+import { useState } from "react";
+import { eventDisplayDate } from "../api";
+import {
+  EARNINGS_STATUS_LABEL,
+  EVENT_KIND_LABEL,
+  FOMC_STATUS_LABEL,
+  formatCardDay,
+  formatEarningsTime,
+  formatEarningsTitle,
+  formatFomcTitleFromDate,
+  formatRelativeDay,
+  statusTagClass,
+} from "../labels";
 import type { TimelineEvent } from "../types";
-import { formatDisplayDate } from "../api";
+import { fallbackInitials, logoUrlForTicker } from "../logos";
 
 type Props = {
   event: TimelineEvent;
   year: number;
+  todayKey: string;
 };
 
-export function EventCard({ event, year }: Props) {
+export function EventCard({ event, year, todayKey }: Props) {
   const isEarnings = event.kind === "earnings";
-  const date = isEarnings
-    ? (event.actualDate ?? event.scheduledDate ?? "")
-    : event.meetingEndDate;
-  const status = isEarnings
-    ? event.status === "disclosed"
-      ? "已披露"
-      : "待披露"
-    : event.status === "held"
-      ? "已召开"
-      : "待召开";
+  const identity = isEarnings ? event.ticker : "FOMC";
+  const logoUrl = isEarnings ? logoUrlForTicker(event.ticker) : null;
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = Boolean(logoUrl) && !logoFailed;
+
+  const { title, formChip } = isEarnings
+    ? formatEarningsTitle(event.reportPeriodLabel, event.form)
+    : { title: formatFomcTitleFromDate(event.meetingEndDate) };
+
+  const typeLabel = EVENT_KIND_LABEL[event.kind];
+  const status = isEarnings ? EARNINGS_STATUS_LABEL[event.status] : FOMC_STATUS_LABEL[event.status];
+  const time = isEarnings ? formatEarningsTime(event.time) : undefined;
+  const dayKey = eventDisplayDate(event);
+  const relative = formatRelativeDay(dayKey, todayKey);
 
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
       search={{ year }}
-      className={clsx("event-card", isEarnings ? "event-card--earnings" : "event-card--fomc")}
+      className="event-card-link"
     >
-      <div className="event-card__meta">
-        <span className="event-card__type">{isEarnings ? "财报" : "FOMC"}</span>
-        <time dateTime={date}>{formatDisplayDate(date)}</time>
-      </div>
-      <h3 className="event-card__title">
-        {isEarnings ? (
-          <>
-            <span className="event-card__ticker">{event.ticker}</span>
-            {event.companyName}
-          </>
-        ) : (
-          <>FOMC · {event.meetingLabel}</>
-        )}
-      </h3>
-      <p className="event-card__sub">
-        {isEarnings ? event.reportPeriodLabel : `第 ${event.sequenceInYear} 场`}
-      </p>
-      <span className={clsx("event-card__status", `event-card__status--${status}`)}>
-        {status}
-      </span>
+      <article className="event-card-grid">
+        <div className="event-card-grid__logo" aria-hidden={!showLogo}>
+          {showLogo && logoUrl ? (
+            <img
+              className="event-card-grid__logo-img"
+              src={logoUrl}
+              alt=""
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <span
+              className={clsx(
+                "event-card-grid__logo-fallback",
+                !isEarnings && "event-card-grid__logo-fallback--fed",
+              )}
+            >
+              {isEarnings ? fallbackInitials(event.ticker) : "Fed"}
+            </span>
+          )}
+        </div>
+        <div className="event-card-grid__title">
+          <span className="event-card-grid__ticker mono">{identity}</span>
+          <h3 className="event-card-grid__heading">{title}</h3>
+        </div>
+        <div className="event-card-grid__meta">
+          <span className={clsx("tag", isEarnings ? "tag--info" : "tag--warn")}>{typeLabel}</span>
+          <span className={statusTagClass(status)}>{status}</span>
+          {formChip ? <span className="tag">{formChip}</span> : null}
+        </div>
+        <div className="event-card-grid__aside">
+          <span className="event-card-grid__date mono">{formatCardDay(dayKey)}</span>
+          <span className="event-card-grid__relative">
+            {time ? `${relative} · ${time}` : relative}
+          </span>
+        </div>
+      </article>
     </Link>
   );
 }

@@ -57,12 +57,12 @@ features/a  ✗→ features/b 的 components 内部实现
 
 ## 分层职责
 
-| 层 | 做什么 | 不做什么 |
-| --- | --- | --- |
-| `routes/` | 声明 path、loader 装配、挂 page | 写业务规则、堆大段 UI |
-| `features/*` | 域内 UI、hooks、api、纯逻辑 | 变成第二个 `shared` |
-| `stores/` | 侧栏、主题、本地草稿等 | 缓存服务端列表/线索（用 Query 类方案） |
-| `shared/` | 真正跨域复用 | 塞某个业务的专属组件 |
+| 层           | 做什么                          | 不做什么                               |
+| ------------ | ------------------------------- | -------------------------------------- |
+| `routes/`    | 声明 path、loader 装配、挂 page | 写业务规则、堆大段 UI                  |
+| `features/*` | 域内 UI、hooks、api、纯逻辑     | 变成第二个 `shared`                    |
+| `stores/`    | 侧栏、主题、本地草稿等          | 缓存服务端列表/线索（用 Query 类方案） |
+| `shared/`    | 真正跨域复用                    | 塞某个业务的专属组件                   |
 
 ## 状态
 
@@ -71,8 +71,9 @@ features/a  ✗→ features/b 的 components 内部实现
 
 ## 样式
 
-- 全局 / tokens → `shared/styles`
-- 某 feature 私有 → 该 feature 旁 `.scss` / module
+- 全局 / tokens → `src/styles/*.scss`（经 `index.scss` `@use`）
+- 某 feature 私有 → 该 feature 旁 `.scss`
+- 仓库统一 SCSS，不新增纯 `.css`
 - `className` 组合用 `clsx`
 
 ## 测试
@@ -90,12 +91,12 @@ features/a  ✗→ features/b 的 components 内部实现
 
 见 `docs/superpowers/specs/2026-07-19-a-share-clue-engine-design.md`：
 
-| 设计概念 | 目录 |
-| --- | --- |
-| 输入 / 搜索 | `features/search` |
-| 实体 | `features/entity` |
-| 线索呈现 | `features/clue` |
-| 异步 job | `features/clue-job` |
-| 反馈 | `features/feedback` |
-| 自选 | `features/watchlist` |
+| 设计概念      | 目录                          |
+| ------------- | ----------------------------- |
+| 输入 / 搜索   | `features/search`             |
+| 实体          | `features/entity`             |
+| 线索呈现      | `features/clue`               |
+| 异步 job      | `features/clue-job`           |
+| 反馈          | `features/feedback`           |
+| 自选          | `features/watchlist`          |
 | 全局壳 / 免责 | `routes/__root` + `shared/ui` |
