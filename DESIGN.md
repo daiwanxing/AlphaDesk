@@ -44,7 +44,7 @@
 
 - 机构级工具感，而非消费级仪表盘营销风
 - 信息密度高但呼吸感来自 1px 分隔与 sticky 日分组，而非大留白 hero
-- 冷静冷色基底 + 单一绿 accent；涨跌用 success/danger，不靠彩虹色板
+- 冷静冷色基底 + 单一绿 accent；**A 股涨跌用红涨绿跌**（`--market-up` / `--market-down`），与 success/danger 状态色分离
 - 品牌名 **AlphaDesk** + 次级 **Terminal**（muted）；标记为深色方块内白色折线（资产见 `assets/brand-mark.svg`）
 
 **系统一句话**：冷色浅底的高密度投研终端——绿 accent 只服务选中与 live，数字走 mono，结构靠边框而非阴影。
@@ -55,23 +55,32 @@
 
 ### Core tokens（必须写入 `:root`）
 
-| Token       | Value                  | Role                          |
-| ----------- | ---------------------- | ----------------------------- |
-| `--bg`      | `oklch(98% 0.005 250)` | 页面底、hover 浅底、表格头    |
-| `--surface` | `oklch(100% 0 0)`      | 顶栏、侧栏、列表、卡片面      |
-| `--fg`      | `oklch(22% 0.02 240)`  | 主文案、主按钮填充            |
-| `--muted`   | `oklch(50% 0.018 240)` | 次文、标签、meta              |
-| `--border`  | `oklch(90% 0.008 240)` | 全站 1px 线、网格缝           |
-| `--accent`  | `oklch(58% 0.16 145)`  | 选中条、active 图标、focus 环 |
+| Token       | Value                  | Role                              |
+| ----------- | ---------------------- | --------------------------------- |
+| `--bg`      | `oklch(98% 0.005 250)` | 页面底、hover 浅底、表格头        |
+| `--surface` | `oklch(100% 0 0)`      | 顶栏、侧栏、列表、卡片面          |
+| `--fg`      | `#121111`              | 主文案、主按钮填充（默认近黑）    |
+| `--muted`   | `#999999`              | 次文、标签、meta（弱视觉）        |
+| `--border`  | `#e0e0e0`              | 全站 1px 线、网格缝（默认中性灰） |
+| `--accent`  | `oklch(58% 0.16 145)`  | 选中条、active 图标、focus 环     |
 
 ### Semantic
 
-| Token       | Value                 | Use                            |
-| ----------- | --------------------- | ------------------------------ |
-| `--success` | `oklch(52% 0.14 150)` | 涨 / beat / released / live 点 |
-| `--warn`    | `oklch(62% 0.14 75)`  | 中等影响、FOMC 类标签          |
-| `--danger`  | `oklch(52% 0.18 25)`  | 跌 / miss / 高影响 / hawk      |
-| `--info`    | `oklch(52% 0.12 250)` | 区域、待发生、dove             |
+| Token       | Value                 | Use                                                     |
+| ----------- | --------------------- | ------------------------------------------------------- |
+| `--success` | `oklch(52% 0.14 150)` | 完成态 / beat / released / live 点（**不是** A 股涨色） |
+| `--warn`    | `oklch(62% 0.14 75)`  | 中等影响、FOMC 类标签                                   |
+| `--danger`  | `oklch(52% 0.18 25)`  | 错误 / miss / 高影响 / hawk（**不是** A 股跌色）        |
+| `--info`    | `oklch(52% 0.12 250)` | 区域、待发生、dove                                      |
+
+### A 股行情方向（与西方红绿相反）
+
+| Token           | Value     | Use                                      |
+| --------------- | --------- | ---------------------------------------- |
+| `--market-up`   | `#e53935` | 涨、成交额较上日正增（大陆行情惯例红涨） |
+| `--market-down` | `#2e7d32` | 跌、成交额较上日负增（绿跌）             |
+
+状态色（success/danger）与行情色分离：标签「已披露」仍用 success 绿；量能/涨跌数字只用 `--market-up` / `--market-down`。
 
 ### 派生用法（勿另起品牌色）
 
@@ -82,7 +91,7 @@
 - Overlay：`oklch(22% 0.02 240 / 0.28)`
 - Toast / 主按钮：`bg = --fg`，字 = `--surface`
 
-**规则**：每屏 accent 点缀 ≤ 2 处结构性使用（选中条 + focus/live）；涨跌色只用于数值与标签，不铺大面。
+**规则**：每屏 accent 点缀 ≤ 2 处结构性使用（选中条 + focus/live）；行情涨跌色只用于数值，不铺大面。
 
 完整变量见 `colors_and_type.scss`。
 
@@ -97,7 +106,7 @@
 | Brand              | 13px · 600 · -0.01em                                          | 后缀 Terminal 用 muted 500           |
 | Body / 行项目      | 13–14px · 510–550 · 1.4–1.5                                   | 默认 `14px / 1.5` 文档根             |
 | Section label      | 11px · 550 · uppercase · 0.08em                               | 侧栏组名、详情 h3、表头              |
-| Tag                | 10px · 550 · uppercase · 0.06em                               | 小圆角 2px                           |
+| Tag                | 10px · 常规字重 · uppercase · 0.06em                          | 圆角同默认 4px                       |
 | Meta / source      | 11–12px · muted                                               |                                      |
 | Mono 数据          | `--font-mono` · tabular-nums                                  | 时间、代码、badge 计数、metric、利率 |
 
@@ -123,7 +132,8 @@
 | 16–24 | 详情内边距          | detail-inner 24×32  |
 | 48    | 顶栏高度 / 空状态   |                     |
 
-**半径**：标签 2px · mark/kbd 3px · 控件/卡片 4px · pill/avatar 999 / 50%。  
+**半径**：默认一律 `4px`（控件 / 卡片 / 标签 / brand-mark）。例外仅 pill `999px`、正圆 `50%`（头像、状态点等）。  
+**边框色**：默认一律 `var(--border)` = `#e0e0e0`；语义态（success/warn/danger/info、filter on、accent 边）可偏离。  
 **阴影**：仅下拉/移动抽屉 `0 8px 24px oklch(22% 0.02 240 / 0.12)`；live 点外环；**默认卡片无大阴影**。
 
 详见 `tokens.scss`。

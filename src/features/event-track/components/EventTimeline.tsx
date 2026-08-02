@@ -57,7 +57,7 @@ function TimelineSection({
         {[...groups.entries()].map(([day, dayEvents]) => (
           <section key={day} className="timeline__day">
             <h3 className="timeline__day-label">{formatDayHeading(day)}</h3>
-            <ul className="timeline__list">
+            <ul className="timeline-list">
               {dayEvents.map((event) => (
                 <li key={event.id}>
                   <EventCard event={event} year={year} todayKey={todayKey} />
@@ -133,10 +133,32 @@ export function StatsBar({
 }
 
 export function TimelineSkeleton() {
+  const sections = [{ cards: 2 }, { cards: 3 }] as const;
+
   return (
     <div className="timeline-skeleton" aria-hidden="true">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="skeleton-row" />
+      {sections.map((section, s) => (
+        <section key={s} className="timeline-skeleton__day">
+          <div className="skeleton-shimmer timeline-skeleton__day-label" />
+          <ul className="timeline-list">
+            {Array.from({ length: section.cards }).map((_, i) => (
+              <li key={i} className="event-card-grid timeline-skeleton__card">
+                <span className="event-card-grid__logo">
+                  <span className="timeline-skeleton__fill" />
+                </span>
+                <span className="event-card-grid__main">
+                  <span className="timeline-skeleton__fill timeline-skeleton__title" />
+                  <span className="timeline-skeleton__fill timeline-skeleton__chip" />
+                  <span className="timeline-skeleton__fill timeline-skeleton__chip timeline-skeleton__chip--short" />
+                </span>
+                <span className="event-card-grid__aside">
+                  <span className="timeline-skeleton__fill timeline-skeleton__date" />
+                  <span className="timeline-skeleton__fill timeline-skeleton__relative" />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
     </div>
   );

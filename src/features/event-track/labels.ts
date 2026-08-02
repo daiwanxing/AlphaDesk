@@ -58,7 +58,7 @@ export function formatEarningsTime(raw?: string): string | undefined {
   return raw.replace(/^time-/i, "").replace(/-/g, " ");
 }
 
-/** Light-Chinese earnings title; keep SEC form as a separate chip when present. */
+/** Compact earnings title; keep SEC form as a separate chip when present. */
 export function formatEarningsTitle(
   label: string,
   form?: string,
@@ -67,10 +67,11 @@ export function formatEarningsTitle(
   const formChip = (form || formFromLabel)?.toUpperCase();
   let core = label.replace(SEC_FORM_RE, " ").trim();
 
-  core = core.replace(/\bFY\s*(\d{4})\b/i, "$1财年");
+  // FY2026 Q2 → 2026 Q2；FY2026 (Jul) → 2026 7月
+  core = core.replace(/\bFY\s*(\d{4})\b/i, "$1");
   core = core.replace(/\s*\((\w{3})\)/i, (_, mon: string) => {
     const n = MONTH_ABBR[mon.toLowerCase()];
-    return n ? `（${n}月）` : `(${mon})`;
+    return n ? ` ${n}月` : ` ${mon}`;
   });
 
   return { title: core.replace(/\s+/g, " ").trim(), formChip };

@@ -78,7 +78,6 @@
     font-size: var(--text-metric);
     font-weight: 600;
     letter-spacing: var(--tracking-tight);
-    color: var(--fg);
     font-variant-numeric: tabular-nums;
   }
 }
@@ -91,11 +90,11 @@
   color: var(--muted);
 
   &--up {
-    color: var(--success);
+    color: var(--market-up);
   }
 
   &--down {
-    color: var(--danger);
+    color: var(--market-down);
   }
 }
 

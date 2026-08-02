@@ -65,7 +65,7 @@ button {
   &-mark {
     inline-size: 22px;
     block-size: 22px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     flex-shrink: 0;
     display: block;
   }
@@ -124,7 +124,6 @@ button {
     padding-inline: var(--space-5);
     border-radius: var(--radius);
     font-size: var(--text-base);
-    font-weight: 400;
     color: var(--fg);
     text-align: start;
     text-decoration: none;
