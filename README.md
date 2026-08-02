@@ -1,27 +1,50 @@
-# Investor
+# AlphaDesk Terminal
 
-信息聚合投资研究平台 · **事件追踪** 模块原型（七姐妹财报 + FOMC）。
+**AlphaDesk** 是面向个人投研的信息聚合终端：把分散在官方站点与公开日历里的关键事件、材料与市场节奏，收进同一个冷静、高密度的工作台，减少「找信息」的时间，把注意力留给阅读与判断。
 
-## 运行
+> 不做买卖建议，不发明伪实时行情精度；界面简体中文，ticker / FOMC 等专有名词保留英文。
+
+## 产品定位
+
+|              |                                                                          |
+| ------------ | ------------------------------------------------------------------------ |
+| **一句话**   | 投研信息中枢 · 终端形态                                                  |
+| **气质**     | 机构级工具感：浅冷色底、绿 accent、红涨绿跌（A 股惯例）、数字走等宽 mono |
+| **受众**     | 买方 / 卖方投研、宏观与个股事件跟进（当前为单用户原型）                  |
+| **平台形态** | 多模块可扩展；模块独立、可互通，按研究需要进入                           |
+
+当前已落地的模块：
+
+1. **事件追踪** — MAG7（七姐妹）财报日程 + FOMC 议息：即将到来 / 已发生时间线，点选进入详情（官方链接、材料发布态、AI 简报槽位）
+2. **A 股量能** — 沪 / 深 / 北成交额看板：相对上日变化、盘中 / 休市会话态、本地缓存减少重复拉取
+
+规划中或设计文档中的方向还包括 News 快讯等（见设计系统与 PRD）。
+
+## 快速开始
 
 ```bash
 pnpm install
 pnpm dev          # 本地：Vite + /api 中间件（时间线）；CloudBase URL 可留空
 ```
 
+要求：Node.js **>= 22**；包管理器必须使用 **pnpm**。
+
+本地 CloudBase：`.env.local` 中 `VITE_CLOUDBASE_API_BASE` 留空时，时间线走 Vite `/api`；设为 `/cloudbase` 则经单一 proxy 转发全部 HTTP 云函数；生产填网关 origin。示例见 [`.env.example`](./.env.example)。
+
 ## 部署（全栈 CloudBase）
 
-| 组件                | CloudBase         |
-| ------------------- | ----------------- |
-| 静态前端            | 静态网站托管      |
-| 时间线 `get-events` | HTTP 云函数       |
-| AI 简报 / backfill  | HTTP / 事件云函数 |
+| 组件                           | CloudBase         |
+| ------------------------------ | ----------------- |
+| 静态前端                       | 静态网站托管      |
+| 时间线 `get-events`            | HTTP 云函数       |
+| AI 简报 / backfill             | HTTP / 事件云函数 |
+| A 股量能 `get-market-turnover` | HTTP 云函数       |
 
 **1. 编译并上传云函数**
 
 ```bash
 pnpm cf:build
-# 在 CloudBase 控制台或使用 CLI 上传 cloudfunctions/get-events 等目录
+# 在 CloudBase 控制台或使用 CLI 上传 cloudfunctions/* 目录
 ```
 
 **2. 构建并部署静态站**
@@ -36,60 +59,32 @@ pnpm deploy:cloudbase
 
 控制台：[静态网站托管](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/static-hosting) · [云函数](https://tcb.cloud.tencent.com/dev?envId=trader-d4gl4d7a1cb6baebb#/scf)
 
-**本地开发：** `.env.local` 中 `VITE_CLOUDBASE_API_BASE` 留空时，时间线走 Vite `/api` 中间件；设为 `/cloudbase` 则经 Vite 单一 proxy 转发全部 HTTP 云函数（如 `/cloudbase/get-events`）；生产填网关 origin。
-
 ## CI/CD（GitHub → CloudBase）
-
-当前分支约定：
 
 | 分支     | 用途                                                         |
 | -------- | ------------------------------------------------------------ |
 | `main`   | 日常开发与合并                                               |
 | `deploy` | 生产发布分支；**push / merge 到此分支**会触发 GitHub Actions |
 
-工作流文件：[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+工作流：[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)  
+流水线：`pnpm build:cloudbase` → 编译云函数 → `tcb hosting deploy` + `tcb fn deploy`。
 
-流水线会：`pnpm build:cloudbase` → 编译云函数 → `tcb hosting deploy` + `tcb fn deploy`（HTTP / Event）。
+### Secrets
 
-### 1. 创建 GitHub 仓库并推送
+仓库 **Settings → Secrets and variables → Actions**（或 Environment `ENV`）配置：
 
-```bash
-# 在 GitHub 上新建空仓库后：
-git remote add origin git@github.com:<你的账号>/investor.git
-git push -u origin main
-git branch deploy
-git push -u origin deploy
-```
+| Secret               | 说明                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| `TCB_SECRET_ID`      | 腾讯云 API 密钥 SecretId                                      |
+| `TCB_SECRET_KEY`     | 腾讯云 API 密钥 SecretKey                                     |
+| `VITE_BRIEF_API_KEY` | 与云函数 `BRIEF_API_KEY` 一致（会打进前端包，仅单用户可接受） |
 
-### 2. 配置 Secrets
-
-仓库 **Settings → Secrets and variables → Actions** 添加：
-
-| Secret               | 说明                                                                               |
-| -------------------- | ---------------------------------------------------------------------------------- |
-| `TCB_SECRET_ID`      | 腾讯云 API 密钥 SecretId（[CAM 密钥](https://console.cloud.tencent.com/cam/capi)） |
-| `TCB_SECRET_KEY`     | 腾讯云 API 密钥 SecretKey                                                          |
-| `VITE_BRIEF_API_KEY` | 与云函数 `BRIEF_API_KEY` 一致（会打进前端包，仅单用户可接受）                      |
-
-参考：[CloudBase CI/CD 文档](https://docs.cloudbase.net/hosting/cli-devops)
-
-### 3. 发布流程
+发布：
 
 ```bash
-# 在 main 完成开发并提交后：
 git checkout deploy
 git merge main
-git push origin deploy   # 触发 Deploy CloudBase workflow
-```
-
-或在 GitHub 上开 PR：`main` → `deploy`，合并后同样触发。
-
-### 4. 本地手动部署（可选）
-
-```bash
-# 需已 tcb login，并准备好生产 env
-cp .env.production.cloudbase.example .env.production.local
-pnpm deploy:cloudbase   # = build:cloudbase + scripts/deploy-cloudbase.sh
+git push origin deploy   # 触发 Deploy CloudBase
 ```
 
 ## 数据来源（公开）
@@ -99,73 +94,56 @@ pnpm deploy:cloudbase   # = build:cloudbase + scripts/deploy-cloudbase.sh
 | 已披露财报         | [SEC EDGAR](https://data.sec.gov)                                                  |
 | 待披露日程（预计） | [Nasdaq Earnings Calendar](https://api.nasdaq.com)                                 |
 | FOMC 日程与材料    | [Federal Reserve](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm) |
+| A 股成交额         | 东财公开接口（经 `get-market-turnover` 代理）                                      |
 
 ## 文档
 
-- 产品需求：[`docs/superpowers/specs/2026-07-30-investment-research-platform-prd.md`](docs/superpowers/specs/2026-07-30-investment-research-platform-prd.md)
-- V2 AI 解读（产品）：[`docs/superpowers/specs/2026-07-30-event-ai-brief-prd.md`](docs/superpowers/specs/2026-07-30-event-ai-brief-prd.md)
-- V2 AI 解读（CloudBase 设计）：[`docs/superpowers/specs/2026-07-30-event-ai-brief-cloudbase-design.md`](docs/superpowers/specs/2026-07-30-event-ai-brief-cloudbase-design.md)
-
-## 说明
-
-- 本原型为 **初步效果演示**；生产部署在腾讯云 CloudBase（静态站 + 云函数）
-- `pnpm preview` 仅静态前端；时间线 API 需 `pnpm dev` 或已部署的 `get-events` 云函数
+| 文档                                                                                   | 说明                                     |
+| -------------------------------------------------------------------------------------- | ---------------------------------------- |
+| [`DESIGN.md`](./DESIGN.md)                                                             | 终端视觉与设计 token（品牌、色板、布局） |
+| [`src/README.md`](./src/README.md)                                                     | 前端目录与依赖方向约定                   |
+| [平台 PRD](docs/superpowers/specs/2026-07-30-investment-research-platform-prd.md)      | 产品定位与模块边界                       |
+| [事件 AI 简报 PRD](docs/superpowers/specs/2026-07-30-event-ai-brief-prd.md)            | AI 解读产品需求                          |
+| [CloudBase 设计](docs/superpowers/specs/2026-07-30-event-ai-brief-cloudbase-design.md) | 简报链路与云函数架构                     |
 
 ## 技术栈
 
-| 用途              | 工具                                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 构建 / 开发服务器 | [Vite](https://vite.dev/) 8                                                                                                                       |
-| UI                | [React](https://react.dev/) 19                                                                                                                    |
-| 路由              | [TanStack Router](https://tanstack.com/router)                                                                                                    |
-| 状态              | [Zustand](https://zustand.docs.pmnd.rs/)                                                                                                          |
-| 语言              | [TypeScript](https://www.typescriptlang.org/) 7                                                                                                   |
-| 样式预处理器      | [Sass](https://sass-lang.com/)                                                                                                                    |
-| className         | [clsx](https://github.com/lukeed/clsx)                                                                                                            |
-| 工具库            | [lodash-es](https://lodash.com/)                                                                                                                  |
-| 测试              | [Vitest](https://vitest.dev/) + Testing Library                                                                                                   |
-| Lint              | [Oxlint](https://oxc.rs/docs/guide/usage/linter)                                                                                                  |
-| Format            | [Oxfmt](https://oxc.rs/docs/guide/usage/formatter)                                                                                                |
-| Git hooks         | [Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) + [commitlint](https://commitlint.js.org/) |
+| 用途          | 工具                                 |
+| ------------- | ------------------------------------ |
+| 构建          | Vite 8                               |
+| UI            | React 19                             |
+| 路由          | TanStack Router                      |
+| 状态          | Zustand                              |
+| 样式          | Sass（BEM 嵌套）                     |
+| 测试          | Vitest + Testing Library             |
+| Lint / Format | Oxlint · Oxfmt                       |
+| Git hooks     | Husky + lint-staged + commitlint     |
+| 后端          | 腾讯云 CloudBase（Hosting + 云函数） |
 
 ## 脚本
 
-要求：
-
-- Node.js **>= 22**
-- 包管理器必须使用 **pnpm**（`npm` / `yarn` 安装会被 `only-allow` 拦截）
-
 ```bash
 pnpm install
-pnpm dev             # 本地开发
-pnpm build           # 类型检查 + 生产构建
-pnpm preview         # 预览构建产物
-pnpm test            # 跑一遍测试
-pnpm test:watch      # 监听模式测试
-pnpm lint            # Oxlint
-pnpm lint:fix       # Oxlint 自动修复
-pnpm format          # Oxfmt 格式化
-pnpm format:check    # 检查格式是否符合规范
-pnpm cf:build        # 编译云函数 .ts → .js
-pnpm deploy:cloudbase # 构建并上传静态站到 CloudBase
+pnpm dev              # 本地开发
+pnpm build            # 类型检查 + 生产构建
+pnpm preview          # 预览构建产物
+pnpm test             # 测试
+pnpm lint / lint:fix
+pnpm format / format:check
+pnpm cf:build         # 编译云函数 .ts → .js
+pnpm deploy:cloudbase # 构建并上传静态站
 ```
 
-提交约定（[Conventional Commits](https://www.conventionalcommits.org/)）：`type(scope): subject`  
-例如 `feat(events): add timeline year switch`、`chore: setup husky and commitlint`。  
-`pre-commit` 会对暂存文件跑 Oxlint + Oxfmt；`commit-msg` 会校验提交说明。
+提交约定：[Conventional Commits](https://www.conventionalcommits.org/) · 中文 subject（见 [`.cursorrules`](./.cursorrules)）。
 
 ## 目录
 
 ```text
 src/routes/          # 文件路由（薄）
-src/features/        # 业务域竖切
+src/features/        # 业务域竖切（event-track / market-turnover …）
 src/stores/          # Zustand
 src/shared/          # 跨域复用
 server/              # 时间线逻辑（本地中间件 + 云函数 bundle 源）
 cloudfunctions/      # CloudBase 云函数（TypeScript 源码）
-src/test/            # 入口 / 集成测试
-docs/                # 设计文档
+docs/                # 设计 / 计划文档
 ```
-
-**结构与依赖约定：** 见 [`src/README.md`](./src/README.md)。  
-**产品设计：** 见 [`docs/superpowers/specs/`](./docs/superpowers/specs/)。

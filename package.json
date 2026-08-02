@@ -1,7 +1,8 @@
 {
-  "name": "investor",
+  "name": "alphadesk",
   "version": "0.0.0",
   "private": true,
+  "description": "AlphaDesk Terminal — 信息聚合投研终端（事件追踪 / A 股量能）",
   "type": "module",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
