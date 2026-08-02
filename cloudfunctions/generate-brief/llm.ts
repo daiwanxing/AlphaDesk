@@ -1,10 +1,8 @@
 import type { BriefSection, BriefSlot } from "./prompts";
 import { requiredSectionIds } from "./prompts";
 
-const DEEPSEEK_BASE =
-  process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-const DEEPSEEK_MODEL =
-  process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
+const DEEPSEEK_BASE = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -65,17 +63,11 @@ function systemPrompt(slot: BriefSlot): string {
     return [EARNINGS_ANALYST_BRIEF, ...common].join("\n");
   }
 
-  return [
-    "你是投资研究助手，只根据给定官方原文撰写结构化中文摘要。",
-    ...common,
-  ].join("\n");
+  return ["你是投资研究助手，只根据给定官方原文撰写结构化中文摘要。", ...common].join("\n");
 }
 
 function userPrompt(slot: BriefSlot, sourceText: string): string {
-  const kind =
-    slot === "earnings"
-      ? "上市公司 SEC 10-Q/10-K 原文"
-      : `FOMC ${slot} 官方材料原文`;
+  const kind = slot === "earnings" ? "上市公司 SEC 10-Q/10-K 原文" : `FOMC ${slot} 官方材料原文`;
   return [
     `请阅读以下${kind}，按系统提示输出 json（含 sections 数组）。`,
     "",
@@ -97,9 +89,7 @@ function parseSectionsJson(raw: string, slot: BriefSlot): BriefSection[] {
   }
   const required = requiredSectionIds(slot);
   const byId = new Map(
-    sections
-      .filter((s) => s && typeof s.id === "string")
-      .map((s) => [s.id, s] as const),
+    sections.filter((s) => s && typeof s.id === "string").map((s) => [s.id, s] as const),
   );
   return required.map((id) => {
     const s = byId.get(id);
@@ -143,8 +133,11 @@ export async function generateSectionsWithDeepSeek(opts: {
       stream: false,
       // JSON Output：见 https://api-docs.deepseek.com/zh-cn/guides/json_mode
       response_format: { type: "json_object" },
-      // earnings-trader-v1 七块更密，留足输出余量
-      max_tokens: 8192,
+      // V4 thinking：显式开启；effort 仅 high | max，取最高档
+      thinking: { type: "enabled" },
+      reasoning_effort: "max",
+      // earnings-trader-v1 七块更密；thinking 也占 completion 预算，留足余量
+      max_tokens: 16384,
       temperature: 0.2,
     }),
   });
