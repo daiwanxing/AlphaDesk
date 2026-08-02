@@ -3,8 +3,8 @@ export const THESVG_REF = "v2.0.0";
 
 const THESVG_BASE = `https://cdn.jsdelivr.net/gh/glincker/thesvg@${THESVG_REF}/public/icons`;
 
-/** Apple theSVG default is white — use Wikimedia black mark on light UI. */
-const APPLE_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg";
+/** Apple theSVG default is white — Simple Icons mark fits the 24×24 cell (has viewBox). */
+const APPLE_LOGO_URL = "https://cdn.simpleicons.org/apple/121111";
 
 /**
  * theSVG nvidia/default includes wordmark; use Simple Icons eye-only mark (brand green).

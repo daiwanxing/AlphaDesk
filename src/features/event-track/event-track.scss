@@ -499,17 +499,16 @@
     overflow: clip;
   }
 
-  &__logo-img,
+  &__logo-img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+
   &__logo-fallback {
     inline-size: 100%;
     block-size: 100%;
-  }
-
-  &__logo-img {
-    object-fit: contain;
-  }
-
-  &__logo-fallback {
     display: grid;
     place-items: center;
     font-size: 0.625rem;
