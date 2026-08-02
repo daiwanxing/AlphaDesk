@@ -329,6 +329,7 @@ type Props = {
 - Y：累计额；`axisLabel` formatter 用现有 `formatAmountYuan` 或缩写亿
 - Series0：今日，`areaStyle` 浅蓝透明，线 `#3b6ea8` 或 CSS 变量读入（canvas 需实色，可在 scss 定义 `--chart-today` / `--chart-prev`）
 - Series1：昨日，橙线，无 area；`showPrev` 为 false 时不加入或 data 全 null
+- 用 Task 5 的 `alignSeriesToAxis(axis, points)` 生成系列 data
 - `animationDuration: 400` 左右；刷新勿 `dispose` 重建
 - 高度：桌面 ~320px，窄屏 ~240px（scss）
 
@@ -348,7 +349,7 @@ type Props = {
 
 - 标题 + session 徽章（保留）
 - disclaimer 一行
-- KPI 三格：主额 / 对比全日额 / delta（`formatDelta`；颜色仍 `delta--up/down`）
+- KPI 三格：用 Task 5 `kpiLabels(session)` 作文案；主额 / 对比全日额 / delta（`formatDelta`；颜色仍 `delta--up/down`）
 - `IntradayTurnoverChart`
 - asOf
 - **第一版隐藏**三市 `turnover-grid`（或 `<details>` 折叠，默认关）
