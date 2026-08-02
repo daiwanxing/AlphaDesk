@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchMarketTurnover } from "@/features/market-turnover/api";
+import {
+  peekTurnoverMemoryCache,
+  readTurnoverCache,
+  turnoverDataEqual,
+  writeTurnoverCache,
+} from "@/features/market-turnover/cache";
 import { TurnoverBoard } from "@/features/market-turnover/components/TurnoverBoard";
 import { resolveMarketSession } from "@/features/market-turnover/session";
 import type { MarketSession, MarketTurnoverResponse } from "@/features/market-turnover/types";
@@ -21,10 +27,13 @@ export const Route = createFileRoute("/turnover")({
 });
 
 function TurnoverPage() {
-  const [data, setData] = useState<MarketTurnoverResponse | null>(null);
+  const [boot] = useState(() => {
+    const cached = readTurnoverCache();
+    return { cached, loading: cached === null };
+  });
+  const [data, setData] = useState<MarketTurnoverResponse | null>(boot.cached);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(boot.loading);
   const [localSession, setLocalSession] = useState<MarketSession>(() =>
     resolveMarketSession(new Date()),
   );
@@ -44,6 +53,12 @@ function TurnoverPage() {
     ? null
     : "请在 .env.local 中配置 VITE_CLOUDBASE_TURNOVER_URL（CloudBase get-market-turnover 地址）";
 
+  const applyFetched = useCallback((res: MarketTurnoverResponse) => {
+    if (turnoverDataEqual(dataRef.current, res)) return;
+    writeTurnoverCache(res);
+    setData(res);
+  }, []);
+
   const clearPollTimer = useCallback(() => {
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
@@ -56,11 +71,10 @@ function TurnoverPage() {
     return BACKOFF_MS[Math.min(backoffRef.current - 1, BACKOFF_MS.length - 1)];
   }, []);
 
-  const load = useCallback(async (isManual = false): Promise<boolean> => {
+  const load = useCallback(async (): Promise<boolean> => {
     if (!turnoverUrl()) {
       setError(null);
       setLoading(false);
-      setRefreshing(false);
       return false;
     }
 
@@ -69,14 +83,12 @@ function TurnoverPage() {
     abortRef.current = controller;
     const generation = ++loadGenRef.current;
 
-    const hasData = dataRef.current !== null;
-    if (!hasData) setLoading(true);
-    if (isManual) setRefreshing(true);
+    if (dataRef.current === null) setLoading(true);
 
     try {
       const res = await fetchMarketTurnover({ signal: controller.signal });
       if (!mountedRef.current || generation !== loadGenRef.current) return false;
-      setData(res);
+      applyFetched(res);
       setError(null);
       backoffRef.current = 0;
       return true;
@@ -90,10 +102,9 @@ function TurnoverPage() {
     } finally {
       if (mountedRef.current && generation === loadGenRef.current) {
         setLoading(false);
-        setRefreshing(false);
       }
     }
-  }, []);
+  }, [applyFetched]);
 
   const schedulePoll = useCallback(() => {
     clearPollTimer();
@@ -120,8 +131,10 @@ function TurnoverPage() {
   const handleSessionChange = useCallback(
     (session: MarketSession) => {
       const prev = prevSessionRef.current;
-      prevSessionRef.current = session;
-      setLocalSession(session);
+      if (prev !== session) {
+        prevSessionRef.current = session;
+        setLocalSession(session);
+      }
 
       if (session === "continuous") {
         if (timerRef.current === null || prev !== "continuous") {
@@ -138,8 +151,13 @@ function TurnoverPage() {
     mountedRef.current = true;
     prevSessionRef.current = resolveMarketSession(new Date());
 
+    // SPA 再点进来：内存已有 → 不立刻打接口；整页刷新：内存空、可有 localStorage → 先展示再 probe
+    const hadMemory = peekTurnoverMemoryCache() !== null;
+
     void (async () => {
-      await load();
+      if (!hadMemory) {
+        await load();
+      }
       if (!mountedRef.current) return;
       handleSessionChange(resolveMarketSession(new Date()));
     })();
@@ -156,22 +174,12 @@ function TurnoverPage() {
     };
   }, [clearPollTimer, handleSessionChange, load]);
 
-  const handleRefresh = useCallback(() => {
-    void load(true).then(() => {
-      if (resolveMarketSession(new Date()) === "continuous") {
-        schedulePoll();
-      }
-    });
-  }, [load, schedulePoll]);
-
   return (
     <TurnoverBoard
       configError={configError}
       data={data}
       error={error}
       loading={loading}
-      onRefresh={handleRefresh}
-      refreshing={refreshing}
       session={displaySession}
     />
   );

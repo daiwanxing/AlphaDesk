@@ -1,4 +1,3 @@
-import { Chip, Skeleton } from "@heroui/react";
 import clsx from "clsx";
 import type { TimelineEvent } from "../types";
 import { eventDisplayDate } from "../api";
@@ -126,15 +125,9 @@ export function StatsBar({
 }) {
   return (
     <div className={clsx("stats-bar", className)}>
-      <Chip size="sm" variant="soft" color="success">
-        <Chip.Label>已披露 {meta.earningsDisclosed}</Chip.Label>
-      </Chip>
-      <Chip size="sm" variant="soft" color="warning">
-        <Chip.Label>待披露 {meta.earningsPending}</Chip.Label>
-      </Chip>
-      <Chip size="sm" variant="soft" color="accent">
-        <Chip.Label>FOMC {meta.fomc}</Chip.Label>
-      </Chip>
+      <span className="tag tag--success">已披露 {meta.earningsDisclosed}</span>
+      <span className="tag tag--warn">待披露 {meta.earningsPending}</span>
+      <span className="tag tag--info">FOMC {meta.fomc}</span>
     </div>
   );
 }
@@ -143,7 +136,7 @@ export function TimelineSkeleton() {
   return (
     <div className="timeline-skeleton" aria-hidden="true">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="timeline-skeleton__row" />
+        <div key={i} className="skeleton-row" />
       ))}
     </div>
   );

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { routeTree } from "../routeTree.gen";
 
-function renderApp(initialPath = "/") {
+function renderApp(initialPath = "/events") {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
@@ -30,7 +30,12 @@ describe("EventTrackPage", () => {
     const { router } = renderApp();
     await waitFor(() => expect(router.state.status).toBe("idle"), { timeout: 5000 });
 
-    expect(await screen.findByText(/事件追踪 · A股量能/i)).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/events");
+    expect(await screen.findByText("AlphaDesk")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /事件追踪/ })).toHaveAttribute(
+      "href",
+      "/events",
+    );
     expect(await screen.findByText(/该年份暂无事件数据/i)).toBeInTheDocument();
 
     vi.unstubAllGlobals();

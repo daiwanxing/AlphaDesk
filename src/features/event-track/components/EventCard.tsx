@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Chip } from "@heroui/react";
 import clsx from "clsx";
 import { useState } from "react";
 import { eventDisplayDate } from "../api";
@@ -12,7 +11,7 @@ import {
   formatEarningsTitle,
   formatFomcTitleFromDate,
   formatRelativeDay,
-  statusChipColor,
+  statusTagClass,
 } from "../labels";
 import type { TimelineEvent } from "../types";
 import { fallbackInitials, logoUrlForTicker } from "../logos";
@@ -68,24 +67,16 @@ export function EventCard({ event, year, todayKey }: Props) {
           )}
         </div>
         <div className="event-card-grid__title">
-          <span className="event-card-grid__ticker">{identity}</span>
+          <span className="event-card-grid__ticker mono">{identity}</span>
           <h3 className="event-card-grid__heading">{title}</h3>
         </div>
         <div className="event-card-grid__meta">
-          <Chip size="sm" variant="soft" color={isEarnings ? "accent" : "warning"}>
-            <Chip.Label>{typeLabel}</Chip.Label>
-          </Chip>
-          <Chip size="sm" variant="soft" color={statusChipColor(status)}>
-            <Chip.Label>{status}</Chip.Label>
-          </Chip>
-          {formChip ? (
-            <Chip size="sm" variant="soft">
-              <Chip.Label>{formChip}</Chip.Label>
-            </Chip>
-          ) : null}
+          <span className={clsx("tag", isEarnings ? "tag--info" : "tag--warn")}>{typeLabel}</span>
+          <span className={statusTagClass(status)}>{status}</span>
+          {formChip ? <span className="tag">{formChip}</span> : null}
         </div>
         <div className="event-card-grid__aside">
-          <span className="event-card-grid__date">{formatCardDay(dayKey)}</span>
+          <span className="event-card-grid__date mono">{formatCardDay(dayKey)}</span>
           <span className="event-card-grid__relative">
             {time ? `${relative} · ${time}` : relative}
           </span>

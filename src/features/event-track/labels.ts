@@ -101,8 +101,8 @@ export function formatCardDay(dayKey: string): string {
   });
 }
 
-export function statusChipColor(status: string): "success" | "warning" | "default" {
-  if (status === "已披露" || status === "已召开") return "success";
-  if (status === "待披露") return "warning";
-  return "default";
+export function statusTagClass(status: string): string {
+  if (status === "已披露" || status === "已召开") return "tag tag--success";
+  if (status === "待披露") return "tag tag--warn";
+  return "tag";
 }

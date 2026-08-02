@@ -77,7 +77,7 @@ function EventDetailPage() {
 
   return (
     <div className="event-detail">
-      <Link to="/" search={{ year }} className="back-link">
+      <Link to="/events" search={{ year }} className="back-link">
         ← 返回时间线
       </Link>
 
@@ -215,7 +215,7 @@ function EventDetailPage() {
                   <li key={kind} className="material-group">
                     <div className="material-group__head">
                       <strong>{label}</strong>
-                      <span className={published ? "tag tag--ok" : "tag tag--pending"}>
+                      <span className={published ? "tag tag--success" : "tag tag--pending"}>
                         {published
                           ? "已发布"
                           : kind === "sep" && event.status === "held"

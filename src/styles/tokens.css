@@ -1,0 +1,59 @@
+/**
+ * AlphaDesk Terminal — spacing, radius, elevation, layout chrome
+ * Complements colors_and_type.css
+ */
+
+:root {
+  /* Spacing scale (observed from shell paddings/gaps) */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-9: 18px;
+  --space-10: 20px;
+  --space-11: 22px;
+  --space-12: 24px;
+  --space-14: 28px;
+  --space-16: 32px;
+  --space-20: 40px;
+  --space-24: 48px;
+  --space-28: 56px;
+
+  /* Control heights */
+  --h-chip: 28px;
+  --h-control: 28px;
+  --h-icon: 32px;
+  --h-search: 32px;
+  --h-nav-item: 36px;
+  --h-menu: 36px;
+  --h-topbar: 48px;
+
+  /* Radius */
+  --radius-xs: 2px; /* tags */
+  --radius-sm: 3px; /* kbd, brand-mark */
+  --radius: 4px; /* default surfaces / buttons */
+  --radius-pill: 999px;
+  --radius-full: 50%;
+
+  /* Elevation */
+  --shadow-dropdown: 0 8px 24px oklch(22% 0.02 240 / 0.12);
+  --shadow-live: 0 0 0 3px color-mix(in oklch, var(--success) 18%, transparent);
+  --inset-accent: inset 2px 0 0 var(--accent);
+
+  /* Layout chrome */
+  --nav-w: 220px;
+  --nav-w-collapsed: 56px;
+  --list-w: minmax(340px, 420px);
+  --top-h: var(--h-topbar);
+  --detail-max: 720px;
+  --search-max: 420px;
+
+  /* Motion */
+  --ease-fast: 0.12s ease;
+  --ease-panel: 0.2s ease;
+  --duration-toast: 0.2s;
+}
