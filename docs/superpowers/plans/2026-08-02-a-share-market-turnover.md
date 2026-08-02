@@ -39,7 +39,10 @@
 | `src/routes/turnover.tsx`                                   | 路由页 + 15s 轮询生命周期                                 |
 | `src/routes/__root.tsx`                                     | 主导航：事件追踪 \| A股量能                               |
 | `.env.example` / `.env.production.cloudbase.example`        | `VITE_CLOUDBASE_TURNOVER_URL`                             |
+| `cloudfunctions/get-market-turnover/scf_bootstrap`          | 与其它 HTTP 函数相同的 bootstrap                          |
 | `scripts/deploy-cloudbase.sh`                               | `HTTP_FNS` 加入 `get-market-turnover`                     |
+| `.github/workflows/deploy.yml`                              | 生产构建注入 `VITE_CLOUDBASE_TURNOVER_URL`                |
+| `vite.config.ts`（可选）                                    | 本地 `/cloudbase-turnover` 代理，对齐 briefs              |
 | `scripts/build-cloudfunctions.mjs`                          | 若需显式列举则加入该函数（跟随现有约定）                  |
 
 ---
@@ -142,7 +145,8 @@ VITE_CLOUDBASE_TURNOVER_URL=
 - mount：拉取一次
 - `session === "continuous"`：`setInterval` 15s；否则清 timer
 - unmount / session 离开 continuous：`clearInterval`
-- 失败：保留上一帧 + 错误信息
+- 失败：**保留上一帧** + 错误信息；**退避后再请求**（例如失败后下一次间隔升为 30s/60s，成功后恢复 15s），避免 continuous 下每 15s 狂打失败上游
+- `pre_open`：不轮询；徽章文案接近「未开盘」（与 `closed` 区分即可）
 
 - [ ] **Step 3: 根布局导航**
 
@@ -158,7 +162,8 @@ Active 态可用 `useRouterState` / `Link` activeProps。品牌副标题可略�
 - [ ] **Step 4: 本地冒烟**
 
 Run: `pnpm run dev`  
-打开 `/` 与 `/turnover` 切换；周末应看到休市徽章且 Network 无 15s 重复请求（可临时 mock API）。
+打开 `/` 与 `/turnover` 切换；周末应看到休市徽章且 Network 无 15s 重复请求。  
+可先用 mock JSON / Vite 代理；完整数据等 Task 3 部署后联调。
 
 - [ ] **Step 5: Commit（仅用户要求时）**
 
@@ -172,7 +177,9 @@ Run: `pnpm run dev`
 - Create: `cloudfunctions/get-market-turnover/eastmoney.ts`
 - Create: `cloudfunctions/get-market-turnover/session.ts`（可与前端同逻辑复制，注释「keep in sync」）
 - Create: `cloudfunctions/get-market-turnover/package.json`
+- Create: `cloudfunctions/get-market-turnover/scf_bootstrap`（复制 `get-briefs/scf_bootstrap`）
 - Modify: `scripts/deploy-cloudbase.sh` — `HTTP_FNS` 追加 `get-market-turnover`
+- Modify: `.github/workflows/deploy.yml` — 与其它 `VITE_CLOUDBASE_*` 一并写入生产 `VITE_CLOUDBASE_TURNOVER_URL`
 - Verify: `scripts/build-cloudfunctions.mjs` 能发现并 bundle 该函数
 
 - [ ] **Step 1: eastmoney 客户端**
@@ -202,8 +209,14 @@ Run: `pnpm run dev`
 - [ ] **Step 3: HTTP handler**
 
 `GET /` | `/get-market-turnover` | `/health`  
-组装 markets + total + session + disclaimer；周末路径以日 K 快照为主（见 spec §2.4）。  
-失败：`sendJson(res, 500, { error })`。
+组装 markets + total + session + disclaimer；失败：`sendJson(res, 500, { error })`。
+
+**周末 / 非盘中响应清单：**
+
+- 金额来自最近交易日日 K（全天），**不要**当作「今日累计」
+- 返回 `snapshotTradeDate`（或等价字段）
+- delta 对比再上一交易日全天
+- `session: "weekend"`（或 `closed` / `lunch`）与文案字段一致
 
 - [ ] **Step 4: 构建**
 
@@ -213,7 +226,7 @@ Expected: `get-market-turnover` bundle 成功
 - [ ] **Step 5: 部署（需云环境）**
 
 按现有流程部署 HTTP 函数并绑定网关路径 `/get-market-turnover`（与 get-briefs 相同方式）。  
-填写 `.env.local` / production URL。
+更新 `deploy.yml` 中生产 env，填写 `.env.local` / production URL。
 
 - [ ] **Step 6: 冒烟**
 
