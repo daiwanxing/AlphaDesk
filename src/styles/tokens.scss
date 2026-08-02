@@ -32,10 +32,8 @@
   --h-menu: 36px;
   --h-topbar: 48px;
 
-  /* Radius */
-  --radius-xs: 2px; /* tags */
-  --radius-sm: 3px; /* kbd, brand-mark */
-  --radius: 4px; /* default surfaces / buttons */
+  /* Radius — default 4px; exceptions: pill / full circle only */
+  --radius: 4px;
   --radius-pill: 999px;
   --radius-full: 50%;
 

@@ -37,7 +37,10 @@ export function EventCard({ event, year, todayKey }: Props) {
   const status = isEarnings ? EARNINGS_STATUS_LABEL[event.status] : FOMC_STATUS_LABEL[event.status];
   const time = isEarnings ? formatEarningsTime(event.time) : undefined;
   const dayKey = eventDisplayDate(event);
-  const relative = formatRelativeDay(dayKey, todayKey);
+  const isReleased =
+    (isEarnings && event.status === "disclosed") || (!isEarnings && event.status === "held");
+  const relative = isReleased ? null : formatRelativeDay(dayKey, todayKey);
+  const asideHint = isReleased ? null : [relative, time].filter(Boolean).join(" · ");
 
   return (
     <Link
@@ -66,20 +69,20 @@ export function EventCard({ event, year, todayKey }: Props) {
             </span>
           )}
         </div>
-        <div className="event-card-grid__title">
-          <span className="event-card-grid__ticker mono">{identity}</span>
-          <h3 className="event-card-grid__heading">{title}</h3>
-        </div>
-        <div className="event-card-grid__meta">
-          <span className={clsx("tag", isEarnings ? "tag--info" : "tag--warn")}>{typeLabel}</span>
-          <span className={statusTagClass(status)}>{status}</span>
-          {formChip ? <span className="tag">{formChip}</span> : null}
+        <div className="event-card-grid__main">
+          <div className="event-card-grid__title">
+            <span className="event-card-grid__ticker mono">{identity}</span>
+            <h3 className="event-card-grid__heading">{title}</h3>
+          </div>
+          <div className="event-card-grid__meta">
+            <span className={clsx("tag", isEarnings ? "tag--info" : "tag--warn")}>{typeLabel}</span>
+            <span className={statusTagClass(status)}>{status}</span>
+            {formChip ? <span className="tag">{formChip}</span> : null}
+          </div>
         </div>
         <div className="event-card-grid__aside">
           <span className="event-card-grid__date mono">{formatCardDay(dayKey)}</span>
-          <span className="event-card-grid__relative">
-            {time ? `${relative} · ${time}` : relative}
-          </span>
+          {asideHint ? <span className="event-card-grid__relative">{asideHint}</span> : null}
         </div>
       </article>
     </Link>

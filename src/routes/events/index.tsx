@@ -111,10 +111,6 @@ function EventTrackPage() {
       )}
       {data && !loading && !error && (
         <>
-          <p className="event-track__note muted">
-            已披露：主链公司 IR；SEC EDGAR 供核对。待披露日程来自 Nasdaq Calendar。FOMC 来自 Federal
-            Reserve。预计日仅供参考。
-          </p>
           <EventTimeline events={data.events} year={year} tickerFilter={ticker} />
           <p className="event-track__updated mono">
             更新于 {new Date(data.updatedAt).toLocaleString("zh-CN", { hour12: false })}

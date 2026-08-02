@@ -2,23 +2,23 @@ import { describe, expect, it } from "vitest";
 import { formatEarningsTitle, formatFomcTitleFromDate, formatRelativeDay } from "./labels";
 
 describe("formatEarningsTitle", () => {
-  it("light-chinesifies FY and lifts SEC form to chip", () => {
+  it("compacts FY and lifts SEC form to chip", () => {
     expect(formatEarningsTitle("FY2026 Q2 (10-Q)")).toEqual({
-      title: "2026财年 Q2",
+      title: "2026 Q2",
       formChip: "10-Q",
     });
   });
 
   it("uses explicit form field when label has none", () => {
     expect(formatEarningsTitle("FY2025 Q1", "10-Q")).toEqual({
-      title: "2025财年 Q1",
+      title: "2025 Q1",
       formChip: "10-Q",
     });
   });
 
   it("maps month abbreviations", () => {
     expect(formatEarningsTitle("FY2026 (Mar)")).toEqual({
-      title: "2026财年（3月）",
+      title: "2026 3月",
       formChip: undefined,
     });
   });

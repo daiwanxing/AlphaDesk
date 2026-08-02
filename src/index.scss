@@ -13,7 +13,6 @@
   --sans: var(--font-body);
   --heading: var(--font-display);
   --mono: var(--font-mono);
-  --radius-tag: var(--radius-xs);
 }
 
 *,
@@ -61,12 +60,11 @@ textarea {
   display: inline-flex;
   align-items: center;
   font-size: var(--text-2xs);
-  font-weight: 550;
   letter-spacing: var(--tracking-tag);
   text-transform: uppercase;
   padding-block: 1px;
   padding-inline: 6px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   color: var(--muted);
   background: var(--bg);
@@ -132,15 +130,6 @@ textarea {
   }
 }
 
-.skeleton-row {
-  block-size: 72px;
-  margin: 0;
-  border-block-end: 1px solid var(--border);
-  background: linear-gradient(90deg, var(--bg) 0%, var(--surface) 45%, var(--bg) 100%);
-  background-size: 200% 100%;
-  animation: terminal-shimmer 1.2s ease-in-out infinite;
-}
-
 @keyframes terminal-shimmer {
   from {
     background-position: 100% 0;
@@ -150,8 +139,14 @@ textarea {
   }
 }
 
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--bg) 0%, var(--surface) 45%, var(--bg) 100%);
+  background-size: 200% 100%;
+  animation: terminal-shimmer 1.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-row {
+  .skeleton-shimmer {
     animation: none;
   }
 }

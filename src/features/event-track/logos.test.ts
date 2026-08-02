@@ -7,9 +7,7 @@ describe("logos", () => {
     expect(logoUrlForTicker("AAPL")).toBe(
       "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
     );
-    expect(logoUrlForTicker("NVDA")).toBe(
-      "https://cdn.jsdelivr.net/gh/glincker/thesvg@v2.0.0/public/icons/nvidia/default.svg",
-    );
+    expect(logoUrlForTicker("NVDA")).toBe("https://cdn.simpleicons.org/nvidia/76B900");
     expect(logoUrlForTicker("MSFT")).toContain("/microsoft/default.svg");
   });
 

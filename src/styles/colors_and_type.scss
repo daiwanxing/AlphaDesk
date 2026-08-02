@@ -10,17 +10,17 @@
   /* —— Core six (Open Design contract) —— */
   --bg: #f4f6f8; /* oklch(98% 0.005 250) */
   --surface: #ffffff; /* oklch(100% 0 0) */
-  --fg: #1c2430; /* oklch(22% 0.02 240) */
-  --muted: #6b7380; /* oklch(50% 0.018 240) */
-  --border: #e1e5eb; /* oklch(90% 0.008 240) */
+  --fg: #121111;
+  --muted: #999999;
+  --border: #e0e0e0;
   --accent: #2d9a5b; /* oklch(58% 0.16 145) */
 
   /* OKLch mirrors (prefer in modern browsers when overriding) */
   --bg-oklch: oklch(98% 0.005 250);
   --surface-oklch: oklch(100% 0 0);
-  --fg-oklch: oklch(22% 0.02 240);
-  --muted-oklch: oklch(50% 0.018 240);
-  --border-oklch: oklch(90% 0.008 240);
+  --fg-oklch: oklch(17% 0.004 40);
+  --muted-oklch: oklch(68% 0 0);
+  --border-oklch: oklch(91% 0 0);
   --accent-oklch: oklch(58% 0.16 145);
 
   /* —— Semantic status —— */
@@ -33,6 +33,10 @@
   --warn-oklch: oklch(62% 0.14 75);
   --danger-oklch: oklch(52% 0.18 25);
   --info-oklch: oklch(52% 0.12 250);
+
+  /* —— A-share market direction (红涨绿跌) —— */
+  --market-up: #e53935;
+  --market-down: #2e7d32;
 
   /* —— Derived surfaces / selection —— */
   --accent-soft: rgba(45, 154, 91, 0.1);
@@ -82,14 +86,16 @@
   :root {
     --bg: oklch(98% 0.005 250);
     --surface: oklch(100% 0 0);
-    --fg: oklch(22% 0.02 240);
-    --muted: oklch(50% 0.018 240);
-    --border: oklch(90% 0.008 240);
+    --fg: #121111;
+    --muted: #999999;
+    --border: #e0e0e0;
     --accent: oklch(58% 0.16 145);
     --success: oklch(52% 0.14 150);
     --warn: oklch(62% 0.14 75);
     --danger: oklch(52% 0.18 25);
     --info: oklch(52% 0.12 250);
+    --market-up: #e53935;
+    --market-down: #2e7d32;
     --accent-soft: oklch(58% 0.16 145 / 0.1);
     --accent-softer: oklch(58% 0.16 145 / 0.07);
     --accent-border: oklch(80% 0.04 145);
@@ -141,9 +147,9 @@ html.od-terminal {
 }
 
 .od-up {
-  color: var(--success);
+  color: var(--market-up);
 }
 
 .od-down {
-  color: var(--danger);
+  color: var(--market-down);
 }
