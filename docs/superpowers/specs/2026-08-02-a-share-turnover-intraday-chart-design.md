@@ -27,12 +27,13 @@
 
 ## 1. 与前置规格的关系
 
-| 前置规格条款                    | 本版变更                                                                                            |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| UI：沪/深/京三卡 + 合计         | **改为**合计 KPI + 分时对比主图；三市细节可选次级                                                   |
-| 「较上日」= 今日累计 − 昨收全天 | **盘中主图**改为同时刻累计差；KPI「较昨日」取**当前时刻**相对昨日同时刻（收盘后则相对昨日全天终点） |
-| YAGNI：不做分时同时刻对比       | **撤销**；本版核心就是同时刻对比                                                                    |
-| 昨收全天日 K 缓存               | **仍保留**作周末/校验/KPI「昨日总成交额」；另增**昨日分时序列缓存**                                 |
+| 前置规格条款                        | 本版变更                                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| UI：沪/深/京三卡 + 合计             | **改为**合计 KPI + 分时对比主图；三市细节可选次级                                                                        |
+| 「较上日」= 今日累计 − 昨收全天     | **盘中主图**改为同时刻累计差；KPI「较昨日」取**当前时刻**相对昨日同时刻（收盘后则相对昨日全天终点）                      |
+| YAGNI：不做分时同时刻对比           | **撤销**；本版核心就是同时刻对比                                                                                         |
+| 昨收全天日 K 缓存                   | **仍保留**作周末/校验/KPI「昨日总成交额」；另增**昨日分时序列缓存**                                                      |
+| 实时上游 **O(1)** 请求（前置 §4.3） | **放宽**：本版每个刷新周期并行拉 **3× `trends2`**（三市）；允许 host failover 重试。`ulist` 可作交叉校验，非必须每拍都打 |
 
 会话徽章、休市零轮询、CloudBase 代理、不上浏览器直连东财 —— **不变**。
 
@@ -76,38 +77,55 @@ type TurnoverPoint = {
   v: number;
 };
 
+type CompareMode = "vs_prev_same_time" | "vs_prev_full_day";
+
 type MarketTurnoverResponse = {
   ok: true;
   asOf: string;
   session: MarketSession;
-  /** 主对比：同时刻 */
-  compareMode: "vs_prev_same_time";
+  /** 有完整对比分时则为 vs_prev_same_time；缺对比分时降级为 vs_prev_full_day */
+  compareMode: CompareMode;
   disclaimer: string; // 例：盘中为同时刻累计对比 · 口径为上证+深成指+北证50
-  markets: MarketTurnoverMarket[]; // 保留，供次级或调试
+  markets: MarketTurnoverMarket[]; // 各市 trends2 cumsum 终点（与合计交叉校验）；保留供次级 UI
   total: {
-    amount: number; // 今日（或快照日）累计至最新点
-    prevFullDayAmount: number; // 昨收全天
-    prevSameTimeAmount: number; // 昨日同一时刻累计；若无对应点则用已对齐的最后可得点并在 meta 说明
-    delta: number; // amount - prevSameTimeAmount（收盘后可用 amount - prevFullDayAmount）
+    amount: number; // 主序列（series.primary）最后一点
+    prevFullDayAmount: number; // 对比交易日全天终点（日 K 或对比序列终点）
+    /** 同时刻模式：对比序列上与主序列最新 t 对齐的点；全天降级模式：等于 prevFullDayAmount */
+    prevSameTimeAmount: number;
+    delta: number; // amount -（同时刻？prevSameTimeAmount：prevFullDayAmount）
     deltaPct: number;
   };
   series: {
-    tradeDate: string; // 今日曲线对应交易日 YYYY-MM-DD
+    /** 主曲线（蓝）对应交易日 YYYY-MM-DD — 见 §3.1 会话映射，周末≠日历「今天」 */
+    tradeDate: string;
+    /** 对比曲线（橙）对应交易日 */
     prevTradeDate: string;
-    today: TurnoverPoint[]; // 已 cumsum 且三市合计
-    prev: TurnoverPoint[]; // 昨全日（或至收盘）合计累计
+    /** 主曲线：已 cumsum 且三市合计（字段名 today 为历史兼容；语义=主交易日） */
+    today: TurnoverPoint[];
+    /** 对比曲线：对比交易日全日（或至收盘）合计累计；降级时可为空数组 */
+    prev: TurnoverPoint[];
   };
-  snapshotTradeDate?: string; // 周末等沿用
+  snapshotTradeDate?: string; // 周末等：与 series.tradeDate 同义时可重复，便于旧前端
 };
 ```
 
+### 3.1 会话 × 序列字段映射
+
+| session                           | `series.tradeDate`（蓝/主）             | `series.prevTradeDate`（橙/对比） | KPI 主标签     | KPI 对比标签                |
+| --------------------------------- | --------------------------------------- | --------------------------------- | -------------- | --------------------------- |
+| `continuous` / `lunch` / `closed` | 今日（上海日历交易日）                  | 上一交易日                        | 总成交额       | 昨日总成交额 / 较昨日       |
+| `weekend` 及休市快照              | **上一交易日**（= `snapshotTradeDate`） | **再上一交易日**                  | 上交易日成交额 | 再上一日成交额 / 较再上一日 |
+
+字段名 `series.today` / `prev` 不随周末改名；前端必须用 `tradeDate` / `prevTradeDate` + `session` 决定文案，**禁止**在 `weekend` 下写「今日」。
+
 **构建步骤（云函数）：**
 
-1. 并行拉三市 `trends2`（host failover）
-2. 按日分组 → 分钟额 cumsum → 按 `t` 对齐求和得 `today` / `prev`
-3. `total.amount` = `today` 最后一点；`prevSameTimeAmount` = `prev` 上与最新 `t` 相同的点（午休/缺分钟则向前取最近 `t`）
-4. 若响应中缺完整 `prev`：读文档缓存 `turnover_intraday_prev`；仍缺则降级：仅返回今日序列 + KPI 用昨收全天，disclaimer 标明「暂无昨日分时」
-5. 当解析到完整上一交易日序列时写回缓存（按 `prevTradeDate` 覆盖）
+1. 并行拉三市 `trends2`（host failover；**显式放宽**前置 O(1) 约束）
+2. 按日分组 → 分钟额 cumsum → 按 `t` 对齐求和；再按 §3.1 选主日/对比日填入 `series.today` / `series.prev`
+3. `markets[i].amount` = 该市主日 cumsum 终点；`total.amount` = `series.today` 最后一点（应约等于三市 amount 之和）
+4. 默认 `compareMode: "vs_prev_same_time"`：`prevSameTimeAmount` = 对比序列上与主序列最新 `t` 相同的点（缺则向前取最近 `t`）；`delta = amount - prevSameTimeAmount`。`closed` 且主序列已到 15:00 时，该差即全日差。
+5. 若缺完整对比分时：读文档缓存；仍缺则 **降级** — `compareMode: "vs_prev_full_day"`，`series.prev = []`，`prevSameTimeAmount = prevFullDayAmount`，`delta = amount - prevFullDayAmount`，disclaimer 含「暂无对比日分时 · KPI 为相对全天」
+6. 当解析到完整「上一交易日」分时合计时写回缓存（按该日 `prevTradeDate` 覆盖）
 
 **缓存文档（建议）：** `_id: "turnover_intraday_prev"`，字段：`prevTradeDate`, `points: TurnoverPoint[]`, `updatedAt`。
 
@@ -121,24 +139,29 @@ type MarketTurnoverResponse = {
 [A股量能]  [会话徽章]
 [口径一行：同时刻累计 · 上证+深成指+北证50]
 
-KPI：总成交额 | 昨日总成交额 | 较昨日增减（红/绿）
+KPI：按 §3.1 标签（盘中「总成交额 | 昨日…」；周末「上交易日 | 再上一日…」）
 
-[图例：今日 | 昨日]
-[折线面积图：X=09:30–11:30 / 13:00–15:00，Y=累计额]
+[图例：主日 | 对比日 — 文案随 session]
+[折线面积图：交易时段轴，Y=累计额]
 [asOf]
 ```
 
 - 桌面：KPI 横排；图宽满 content-pane（受既有 max-width 约束可放宽至 ~960–1100px）
 - 窄屏：KPI 两行或横滑；图高约 220–280px
-- 空态：加载中 / 仅有今日无昨日分时 / 配置错误 — 沿用 note-box 模式
+- 空态：加载中 / `compareMode === vs_prev_full_day` 单线 + 提示 / 配置错误 — 沿用 note-box 模式
 
-### 4.2 交互
+### 4.2 横轴（午休）
+
+- **交易时段轴**：仅映射 `09:30–11:30` 与 `13:00–15:00` 两段连续坐标，**午休不占宽度**（两段在 11:30|13:00 处拼接；可画一条细分割线）。不做墙钟连续轴（避免中午大段空白）。
+- 点的 `t` 落在午休或不在竞价时段则忽略或并入最近交易分钟（上游正常不应给出）。
+
+### 4.3 交互
 
 - 盘中 15s 刷新整包（含序列）；点不动画炫技，允许整线重绘
 - 可选：悬停/点按显示该时刻今/昨/差额（移动端长按或点击）— **P1，可第一版省略**
 - 不做「当日 | 近60日」Tab
 
-### 4.3 视觉约束（DESIGN.md）
+### 4.4 视觉约束（DESIGN.md）
 
 - 蓝/橙为系列色，**不是**涨跌色；涨跌色只上 KPI 增减数字
 - 1px 边框、克制圆角、等宽数字；避免卡片阴影堆叠
@@ -147,11 +170,13 @@ KPI：总成交额 | 昨日总成交额 | 较昨日增减（红/绿）
 
 ## 5. 会话态下的数字含义
 
-| session                | 图与 KPI                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| `continuous` / `lunch` | 今日累计序列（截至最新分钟）vs 昨日同时刻；增减 = 同时刻差                                 |
-| `closed`               | 今日全日曲线 vs 昨日全日曲线；增减 = 全日差                                                |
-| `weekend` / 休市快照   | 展示**上一交易日**全日曲线为「主序列」，对比**再上一交易日**；徽章与文案必须标明非今日盘中 |
+字段映射以 **§3.1** 为准。摘要：
+
+| session                | 图与 KPI                                                              |
+| ---------------------- | --------------------------------------------------------------------- |
+| `continuous` / `lunch` | 主=今日截至最新分钟；对比=昨日同时刻；`delta` 为同时刻差（若未降级）  |
+| `closed`               | 主=今日全日；对比=昨日全日；全日差                                    |
+| `weekend` / 休市快照   | 主=上一交易日全日；对比=再上一交易日；徽章与 KPI **禁止**「今日」措辞 |
 
 ---
 
