@@ -1,6 +1,4 @@
-@import "./styles/colors_and_type.css";
-@import "./styles/tokens.css";
-@import "./styles/terminal-shell.scss";
+@use "./styles/terminal-shell.scss";
 
 /* Baseline: vite browserTargets chrome121 / firefox122 / safari17.3 */
 

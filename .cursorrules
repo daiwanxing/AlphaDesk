@@ -5,7 +5,7 @@
 ### 语言
 
 - **必须使用简体中文**撰写 subject（以及可选的 body）。
-- 禁止输出英文 subject，除非改动内容本身是无法翻译的专有名词（如包名、API 名）。
+- 禁止输出英文 subject，除非改动内容本身是无法翻译的专有名词（如包名、API 名、CloudBase、FOMC）。
 
 ### 格式
 
@@ -16,25 +16,41 @@
 ```
 
 - `type`：`feat` | `fix` | `docs` | `style` | `refactor` | `perf` | `test` | `chore` | `revert` | `build` | `ci`
-- `scope`：按改动范围选择，例如 `ui-base`、`ui-business`、`docs`、`Gantt`、组件名或模块名；可省略
+- `scope`：按改动范围选择（见下）；可省略
 - `subject`：中文，简洁说明「为什么改」，不以句号结尾
 
 ### scope 参考（本仓库）
 
-- `ui-base`：packages/ui-base
-- `ui-business`：packages/ui-business
-- `docs`：app/docs 文档站
-- 组件名：如 `Gantt`、`Select` 等
+前端（`src/`）：
+
+- `event-track`：事件时间线 / 卡片 / 详情
+- `market-turnover`：A 股成交额看板
+- `shell`：终端壳（顶栏、侧栏、抽屉、全局样式）
+- `routes`：TanStack 文件路由装配
+- `shared`：跨域 UI / lib / api / styles
+- 其他 feature 目录名：`clue`、`clue-job`、`entity`、`feedback`、`search`、`watchlist`
+
+云函数（`cloudfunctions/`）：
+
+- `detect-new-materials`、`generate-brief`、`get-events`、`get-briefs`、`get-market-turnover`、`trigger-backfill`
+
+其他：
+
+- `docs`：设计稿 / plan / README
+- `ci`：GitHub Actions / 部署脚本
+- `cf`：云函数构建脚本（`cf:build` 等）
 
 ### 示例
 
-- `feat(Gantt): 添加受控模式与任务时间变更回调`
-- `fix(ui-base): 修复甘特图表头 sticky 横向滚动抖动`
-- `docs: 为组件演示启用 VitePress 样式隔离`
-- `chore(ui-business): 同步 ui-base peer 依赖下限`
+- `feat(event-track): 用终端列表行样式重做事件卡片`
+- `feat(market-turnover): 成交额看板接入本地缓存避免重复拉取`
+- `fix(shell): 修复窄屏抽屉遮挡顶栏的层级`
+- `refactor(shell): 按 BEM 嵌套精简终端壳 SCSS`
+- `ci: 拆分 Hosting 与云函数部署步骤`
+- `chore(cf): 清理云函数编译产物目录约定`
 
 ### 写作要求
 
 - 一行标题即可；仅在改动复杂时补充简短中文 body
 - 聚焦本次 staged 变更，不罗列无关历史
-- 与仓库既有中文 commit 风格保持一致
+- 与仓库既有 Conventional Commits 风格保持一致；body 行宽注意 commitlint（约 ≤100 字符）
