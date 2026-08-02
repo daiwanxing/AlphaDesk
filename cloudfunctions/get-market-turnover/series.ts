@@ -71,7 +71,8 @@ export function pickSeriesDates(
   }
 
   const tradeDate = availableDaysSortedAsc.includes(todayYmd) ? todayYmd : latest;
-  const prevTradeDate = availableDaysSortedAsc.filter((day) => day < tradeDate).at(-1);
+  const earlier = availableDaysSortedAsc.filter((day) => day < tradeDate);
+  const prevTradeDate = earlier[earlier.length - 1];
 
   if (!prevTradeDate) {
     throw new Error(`No previous trade date before ${tradeDate}`);
