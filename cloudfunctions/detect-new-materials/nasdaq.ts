@@ -32,8 +32,7 @@ export async function fetchNearTermMag7Upcoming(opts: {
       const url = `https://api.nasdaq.com/api/calendar/earnings?date=${date}`;
       const res = await fetch(url, {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
           Accept: "application/json",
         },
       });

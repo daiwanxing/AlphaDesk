@@ -132,9 +132,7 @@ export function computeActiveWindows(
   events: SlimEvent[],
   briefs: BriefRow[],
 ): ActiveWindow[] {
-  const briefKey = new Map(
-    briefs.map((b) => [`${b.eventId}__${b.slot}`, b] as const),
-  );
+  const briefKey = new Map(briefs.map((b) => [`${b.eventId}__${b.slot}`, b] as const));
   const windows: ActiveWindow[] = [];
 
   for (const ev of events) {

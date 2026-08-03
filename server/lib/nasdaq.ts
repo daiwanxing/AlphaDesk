@@ -32,9 +32,7 @@ export async function fetchNasdaqEarningsForDate(date: string): Promise<NasdaqEa
   if (!res.ok) return [];
   const json = (await res.json()) as NasdaqCalendarResponse;
   const rows = json.data?.rows ?? [];
-  return rows
-    .filter((r) => MAG7_TICKERS.has(r.symbol))
-    .map((r) => ({ ...r, calendarDate: date }));
+  return rows.filter((r) => MAG7_TICKERS.has(r.symbol)).map((r) => ({ ...r, calendarDate: date }));
 }
 
 function formatDate(d: Date): string {
@@ -81,9 +79,7 @@ async function mapPool<T, R>(
     }
   }
 
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => runWorker()),
-  );
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => runWorker()));
   return results;
 }
 

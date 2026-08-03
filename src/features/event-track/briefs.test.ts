@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  deriveHasSep,
-  mergeBriefCards,
-  resolveBriefCardState,
-  slotsForEvent,
-} from "./briefs";
+import { deriveHasSep, mergeBriefCards, resolveBriefCardState, slotsForEvent } from "./briefs";
 import type { BriefDoc, EarningsEvent, FomcEvent } from "./types";
 
 const earningsPending: EarningsEvent = {

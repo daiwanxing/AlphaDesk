@@ -9,6 +9,7 @@
 **Tech Stack:** React 19 + Vite 8（现有前端）、CloudBase 云函数（**TypeScript**，由现有构建链部署时编译）+ 文档型数据库 + `@cloudbase/node-sdk` AI、Vitest（纯逻辑单测）。
 
 **Specs:**
+
 - Product: `docs/superpowers/specs/2026-07-30-event-ai-brief-prd.md`
 - Design: `docs/superpowers/specs/2026-07-30-event-ai-brief-cloudbase-design.md`
 
@@ -20,26 +21,26 @@
 
 ## File map
 
-| Path | Responsibility |
-|------|----------------|
-| `cloudfunctions/get-events/` | HTTP Function：时间线列表与事件详情（bundle `server/api` + `server/lib`） |
-| `cloudfunctions/get-briefs/` | HTTP Function：只读 briefs |
-| `cloudfunctions/detect-new-materials/` | Event Function：窗口检测 + 入队 |
-| `cloudfunctions/generate-brief/` | Event Function：claim → 抓文 → LLM → 写 briefs |
-| `cloudfunctions/trigger-backfill/` | HTTP Function：鉴权后对指定 `year` 触发 `detect-new-materials` backfill |
-| `cloudfunctions/_shared/` | `.ts` 共享：窗口计算、幂等、退避、prompt、DB helpers |
-| `src/features/event-track/briefs.ts` | 槽位补全 + 产品状态合成（纯函数） |
-| `src/features/event-track/api.ts` | `fetchTimeline` / `fetchBriefs` / `requestBriefBackfill` |
-| `src/features/event-track/types.ts` | Brief 类型 |
-| `src/features/event-track/components/AiBriefPanel.tsx` | AI 区 UI（占位/撰写中/就绪/失败） |
-| `src/routes/events/$eventId.tsx` | 并入三层 |
-| `src/features/event-track/briefs.test.ts` | 状态合成单测 |
-| `cloudfunctions/_shared/windows.test.ts` 或 `server/lib/detect-windows.test.ts` | 窗口模式单测（可放仓库根 `src`/`server` 便于 vitest） |
-| `server/lib/detect-windows.ts` | 窗口/模式纯逻辑（可被云函数复制或构建时打包） |
-| `server/api/middleware.ts` | 本地 `pnpm dev` 时间线（不部署到云） |
-| `.env.example` / `.env.production.cloudbase.example` | `VITE_CLOUDBASE_EVENTS_URL` 等 |
-| `cloudbaserc.json` | 静态托管根目录 `dist/` |
-| `README.md` | CloudBase 部署说明 |
+| Path                                                                            | Responsibility                                                            |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `cloudfunctions/get-events/`                                                    | HTTP Function：时间线列表与事件详情（bundle `server/api` + `server/lib`） |
+| `cloudfunctions/get-briefs/`                                                    | HTTP Function：只读 briefs                                                |
+| `cloudfunctions/detect-new-materials/`                                          | Event Function：窗口检测 + 入队                                           |
+| `cloudfunctions/generate-brief/`                                                | Event Function：claim → 抓文 → LLM → 写 briefs                            |
+| `cloudfunctions/trigger-backfill/`                                              | HTTP Function：鉴权后对指定 `year` 触发 `detect-new-materials` backfill   |
+| `cloudfunctions/_shared/`                                                       | `.ts` 共享：窗口计算、幂等、退避、prompt、DB helpers                      |
+| `src/features/event-track/briefs.ts`                                            | 槽位补全 + 产品状态合成（纯函数）                                         |
+| `src/features/event-track/api.ts`                                               | `fetchTimeline` / `fetchBriefs` / `requestBriefBackfill`                  |
+| `src/features/event-track/types.ts`                                             | Brief 类型                                                                |
+| `src/features/event-track/components/AiBriefPanel.tsx`                          | AI 区 UI（占位/撰写中/就绪/失败）                                         |
+| `src/routes/events/$eventId.tsx`                                                | 并入三层                                                                  |
+| `src/features/event-track/briefs.test.ts`                                       | 状态合成单测                                                              |
+| `cloudfunctions/_shared/windows.test.ts` 或 `server/lib/detect-windows.test.ts` | 窗口模式单测（可放仓库根 `src`/`server` 便于 vitest）                     |
+| `server/lib/detect-windows.ts`                                                  | 窗口/模式纯逻辑（可被云函数复制或构建时打包）                             |
+| `server/api/middleware.ts`                                                      | 本地 `pnpm dev` 时间线（不部署到云）                                      |
+| `.env.example` / `.env.production.cloudbase.example`                            | `VITE_CLOUDBASE_EVENTS_URL` 等                                            |
+| `cloudbaserc.json`                                                              | 静态托管根目录 `dist/`                                                    |
+| `README.md`                                                                     | CloudBase 部署说明                                                        |
 
 ### CloudFunctions TypeScript 约定
 
@@ -55,6 +56,7 @@
 ### Task 0: 确认规格与前置条件清单
 
 **Files:**
+
 - Read: `docs/superpowers/specs/2026-07-30-event-ai-brief-prd.md`
 - Read: `docs/superpowers/specs/2026-07-30-event-ai-brief-cloudbase-design.md`
 
@@ -65,6 +67,7 @@
 - [ ] **Step 2: 列出云环境清单（给用户）**
 
 输出给用户确认：
+
 1. CloudBase `envId`
 2. MCP/CLI 登录
 3. 文档库可建集合
@@ -80,6 +83,7 @@
 ### Task 1: 纯逻辑 — 检测窗口模式
 
 **Files:**
+
 - Create: `server/lib/detect-windows.ts`
 - Create: `server/lib/detect-windows.test.ts`
 
@@ -169,6 +173,7 @@ EOF
 ### Task 2: 纯逻辑 — 前端 brief 状态合成
 
 **Files:**
+
 - Create: `src/features/event-track/briefs.ts`
 - Create: `src/features/event-track/briefs.test.ts`
 - Modify: `src/features/event-track/types.ts`
@@ -214,6 +219,7 @@ export type ProductBriefCardState =
 - [x] **Step 2: 写状态合成单测**
 
 覆盖设计 §4.1：
+
 - 材料未发布 → placeholder（即使无 brief）
 - 材料已发布 + 无 brief → writing
 - ready / failed / failed_exhausted / not_applicable
@@ -243,6 +249,7 @@ Expected: PASS
 - [x] **Step 2: 创建集合**
 
 创建空集合（文档库不会因 `add` 自动建集合）：
+
 - `briefs`（**必建**）
 - `jobs`（**必建**）
 - `pipeline_meta`（**必建** — 存 `lastDailyAt`；Task 7 idle/daily 依赖，**不可跳过**）
@@ -252,7 +259,7 @@ Expected: PASS
 
 - [x] **Step 3: 安全规则**
 
-- `briefs` / `jobs`：**仅云函数可写**；客户端默认拒绝写  
+- `briefs` / `jobs`：**仅云函数可写**；客户端默认拒绝写
 - 读走 `get-briefs` HTTP，不强制开放文档库匿名读
 
 - [x] **Step 4: 插入一条 fixture brief（手动）**
@@ -272,6 +279,7 @@ VITE_CLOUDBASE_BRIEFS_URL=https://<稍后网关域名>/briefs
 ### Task 4: 前端 AI 区（fixture / mock 可先跑）
 
 **Files:**
+
 - Create: `src/features/event-track/components/AiBriefPanel.tsx`
 - Modify: `src/features/event-track/api.ts`
 - Modify: `src/features/event-track/event-track.scss`
@@ -290,6 +298,7 @@ VITE_CLOUDBASE_BRIEFS_URL=https://<稍后网关域名>/briefs
 ### Task 5: HTTP Function `get-briefs`
 
 **Files:**
+
 - Create: `cloudfunctions/get-briefs/index.ts`
 - Create: `cloudfunctions/get-briefs/package.json`
 - Create: `cloudfunctions/get-briefs/scf_bootstrap`
@@ -301,11 +310,13 @@ VITE_CLOUDBASE_BRIEFS_URL=https://<稍后网关域名>/briefs
 - [x] **Step 3: 冒烟**
 - [x] **Step 4: 前端 `.env.local` 填真实 URL，刷新详情页验证**
 - [ ] **Step 5: Commit（仅当用户要求）**
+
 ---
 
 ### Task 6: `generate-brief`（先手动 job，再接 LLM）
 
 **Files:**
+
 - Create: `cloudfunctions/generate-brief/index.ts`
 - Create: `cloudfunctions/generate-brief/package.json`
 - Create: `cloudfunctions/generate-brief/prompts.ts` — earnings-trader-v1 / fomc-*-std-v1；earnings sections：`market_take`, `pnl_quality`, `bs_cf_check`, `notes_red_flags`, `kpi_marginal`, `mda_outlook`, `trade_lens`
@@ -313,6 +324,7 @@ VITE_CLOUDBASE_BRIEFS_URL=https://<稍后网关域名>/briefs
 - [x] **Step 1: 实现 claim + 状态机（可先 mock LLM）**
 
 流程：
+
 1. 领 `jobs`（queued 且 `nextRunAt <= now`）或指定 `jobId`
 2. 锁过期的 `processing`（>15min）回 `queued`
 3. claim → `processing`
@@ -329,12 +341,12 @@ Expected: 对应 `briefs` 变 `ready`。已验证：`earnings-MSFT-0001193125263
 
 - [x] **Step 4: Phase B — 换成真实抓取 + DeepSeek API**
 
-- 财报：`data.sec.gov` 解析 `primaryDocument` → Archives 正文 HTML→纯文本（截断）  
-- FOMC：Fed URL → HTML 文本  
-- DeepSeek OpenAI 兼容：`https://api.deepseek.com` + `response_format: json_object`（见[官方 JSON Output](https://api-docs.deepseek.com/zh-cn/guides/json_mode)）  
-- 环境变量：`DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL`（默认 `deepseek-v4-flash`）写在云函数配置，**不进前端**  
-- 强制 JSON `sections[]`；解析失败 → failed + 重试  
-- 写入 `model`、`promptVersion`、`sourceFingerprint`、`generatedAt`  
+- 财报：`data.sec.gov` 解析 `primaryDocument` → Archives 正文 HTML→纯文本（截断）
+- FOMC：Fed URL → HTML 文本
+- DeepSeek OpenAI 兼容：`https://api.deepseek.com` + `response_format: json_object`（见[官方 JSON Output](https://api-docs.deepseek.com/zh-cn/guides/json_mode)）
+- 环境变量：`DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL`（默认 `deepseek-v4-flash`）写在云函数配置，**不进前端**
+- 强制 JSON `sections[]`；解析失败 → failed + 重试
+- 写入 `model`、`promptVersion`、`sourceFingerprint`、`generatedAt`
 - 可选 `job.sourceText`：出口受限时预置原文
 
 - [x] **Step 5: 用真实已披露 Mag7 filing 跑通 1 条**
@@ -348,25 +360,27 @@ Expected: 中文标准块齐全。已验证：`earnings-GOOGL-000165204426000071
 ### Task 7: `detect-new-materials` + Timer
 
 > **产品节奏澄清（相对「披露后立刻分析」）：**  
-> Timer **每 30 分钟唤醒一次**，函数内部按窗口算 `dense` / `daily` / `idle`：  
-> - **dense**（临近披露/会议窗口内）：本轮扫相关材料，发现缺口则入队并 `callFunction('generate-brief')`  
-> - **daily**（无活跃窗口且距上次兜底 ≥12～24h）：轻量全量补漏  
+> Timer **每 30 分钟唤醒一次**，函数内部按窗口算 `dense` / `daily` / `idle`：
+>
+> - **dense**（临近披露/会议窗口内）：本轮扫相关材料，发现缺口则入队并 `callFunction('generate-brief')`
+> - **daily**（无活跃窗口且距上次兜底 ≥12～24h）：轻量全量补漏
 > - **idle**：几乎立刻空退出，**不**打 SEC/Fed  
-> 因此不是「每一条披露事件立刻单独触发一次定时任务」，而是「定时醒来 → 窗口内尽快发现 → 入队生成」。窗口外靠 daily 兜底，可能有数小时延迟。待披露 `earnings-pending-*` **永不**入队。
+>   因此不是「每一条披露事件立刻单独触发一次定时任务」，而是「定时醒来 → 窗口内尽快发现 → 入队生成」。窗口外靠 daily 兜底，可能有数小时延迟。待披露 `earnings-pending-*` **永不**入队。
 
 **Files:**
+
 - Create: `cloudfunctions/detect-new-materials/index.ts`
 - Create: `cloudfunctions/detect-new-materials/package.json`
 - 内嵌或同步 `detect-windows` 逻辑（与 `server/lib/detect-windows.ts` 行为一致）
 
 - [x] **Step 1: 实现模式分支**
 
-1. **默认移植**仓库 `server/lib/sec.ts`、`nasdaq.ts`、`fed.ts`、`constants.ts` 的逻辑进云函数（或共享打包），在函数内拉日程与材料链接；**不要**依赖本机 Vite middleware；时间线读路径走同环境 `get-events`，勿假设外部第三方托管 URL 在云函数内一定可达   
-2. 计算活跃窗口 → `resolveDetectMode`（与 `server/lib/detect-windows.ts` 行为一致）  
-3. `idle` → 立即 `{ earlyExit: true }`（新鲜 `pipeline_meta.scheduleByYear` 缓存命中时**不**打外部 HTTP）  
-4. `dense`/`daily`/`backfill` → 对比指纹；缺口入队；SEP 无则 `not_applicable`  
-5. **禁止**为 `earnings-pending-*` 建 job  
-6. 有入队 → `callFunction('generate-brief')`（同步等待可能超时；job 已入队，靠 Task 8 队列 Timer 或手动 invoke 消费）  
+1. **默认移植**仓库 `server/lib/sec.ts`、`nasdaq.ts`、`fed.ts`、`constants.ts` 的逻辑进云函数（或共享打包），在函数内拉日程与材料链接；**不要**依赖本机 Vite middleware；时间线读路径走同环境 `get-events`，勿假设外部第三方托管 URL 在云函数内一定可达
+2. 计算活跃窗口 → `resolveDetectMode`（与 `server/lib/detect-windows.ts` 行为一致）
+3. `idle` → 立即 `{ earlyExit: true }`（新鲜 `pipeline_meta.scheduleByYear` 缓存命中时**不**打外部 HTTP）
+4. `dense`/`daily`/`backfill` → 对比指纹；缺口入队；SEP 无则 `not_applicable`
+5. **禁止**为 `earnings-pending-*` 建 job
+6. 有入队 → `callFunction('generate-brief')`（同步等待可能超时；job 已入队，靠 Task 8 队列 Timer 或手动 invoke 消费）
 7. `daily` 成功后写 `pipeline_meta` 文档（`_id: "detect"`）的 `lastDailyAt`
 
 - [x] **Step 2: 单测/脚本验证窗口判断与现有 `server/lib/detect-windows` 一致**（`server/lib/detect-windows.cloudfn.test.ts`）
@@ -386,6 +400,7 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 ### Task 8: 队列 Timer + 历史年 backfill（含 HTTP 触发）
 
 **Files:**
+
 - Modify: `cloudfunctions/generate-brief/`（确认无 job 空退出）
 - Create: `cloudfunctions/trigger-backfill/index.ts`
 - Create: `cloudfunctions/trigger-backfill/package.json`
@@ -400,10 +415,10 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 
 - [x] **Step 3: 实现 HTTP `trigger-backfill`**
 
-- Listen `9000` + 无手写 CORS  
-- `POST /` body: `{ "year": 2025 }`  
-- Header: `X-Brief-Api-Key` 与 `BRIEF_API_KEY` 比对，失败 401  
-- 成功则 `callFunction('detect-new-materials', { year, mode: 'backfill' })`  
+- Listen `9000` + 无手写 CORS
+- `POST /` body: `{ "year": 2025 }`
+- Header: `X-Brief-Api-Key` 与 `BRIEF_API_KEY` 比对，失败 401
+- 成功则 `callFunction('detect-new-materials', { year, mode: 'backfill' })`
 - URL：`https://…tcloudbaseapp.com/trigger-backfill`
 
 前端：`requestBriefBackfill(year)`；时间线切年 fire-and-forget。
@@ -417,6 +432,7 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 ### Task 9: 可选 `admin-requeue` + 文档收尾
 
 **Files:**
+
 - Create: `cloudfunctions/admin-requeue/index.ts`（可选）
 - Modify: `README.md`
 
@@ -436,17 +452,17 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 
 ## 验收清单（实现完成后）
 
-| # | 标准 | Pass? |
-|---|------|-------|
-| 1 | 已披露财报详情：三层可见；ready 时含标准 sections | |
-| 2 | 刚披露无 brief：AI=撰写中；链接可用 | |
-| 3 | 待披露：AI=占位，非撰写中 | |
-| 4 | FOMC 三卡独立；无 SEP=不适用；Minutes 未发=占位 | |
-| 5 | 失败可见；耗尽后不再写「将自动重试」 | |
-| 6 | 刷新不重复调 LLM（只读 briefs） | |
-| 7 | idle 检测不打 SEC/Fed | |
-| 8 | 同一 fingerprint 不重复入队 | |
-| 9 | 切换历史年后可触发 backfill，摘要最终可就绪（非永久「未发生」） | |
+| #   | 标准                                                            | Pass? |
+| --- | --------------------------------------------------------------- | ----- |
+| 1   | 已披露财报详情：三层可见；ready 时含标准 sections               |       |
+| 2   | 刚披露无 brief：AI=撰写中；链接可用                             |       |
+| 3   | 待披露：AI=占位，非撰写中                                       |       |
+| 4   | FOMC 三卡独立；无 SEP=不适用；Minutes 未发=占位                 |       |
+| 5   | 失败可见；耗尽后不再写「将自动重试」                            |       |
+| 6   | 刷新不重复调 LLM（只读 briefs）                                 |       |
+| 7   | idle 检测不打 SEC/Fed                                           |       |
+| 8   | 同一 fingerprint 不重复入队                                     |       |
+| 9   | 切换历史年后可触发 backfill，摘要最终可就绪（非永久「未发生」） |       |
 
 ---
 
@@ -462,10 +478,10 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 
 ## 修订记录
 
-| 日期 | 变更 |
-|------|------|
-| 2026-07-31 | 初稿：按 PRD + CloudBase 设计拆 Task 0–9 |
+| 日期       | 变更                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------- |
+| 2026-07-31 | 初稿：按 PRD + CloudBase 设计拆 Task 0–9                                                          |
 | 2026-07-31 | 审阅修订：`pipeline_meta` 必建；补 `trigger-backfill` HTTP + 前端切年；detect 默认移植 server/lib |
-| 2026-07-31 | 再审：失败写 `failed` 再耗尽；trigger-backfill 补齐 HTTP 文件；验收 #9；fixture section ids |
-| 2026-07-31 | 云函数统一 **TypeScript**（`.ts`）；删除 JS+CJS 默认；新增 CloudFunctions TS 约定 |
-| 2026-08-01 | 架构改为全栈 CloudBase：新增 `get-events`、静态托管前端；移除 Vite/Vercel 时间线部署假设 |
+| 2026-07-31 | 再审：失败写 `failed` 再耗尽；trigger-backfill 补齐 HTTP 文件；验收 #9；fixture section ids       |
+| 2026-07-31 | 云函数统一 **TypeScript**（`.ts`）；删除 JS+CJS 默认；新增 CloudFunctions TS 约定                 |
+| 2026-08-01 | 架构改为全栈 CloudBase：新增 `get-events`、静态托管前端；移除 Vite/Vercel 时间线部署假设          |

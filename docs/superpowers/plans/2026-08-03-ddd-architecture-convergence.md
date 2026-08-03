@@ -80,20 +80,22 @@
 
 **Files:**
 
-- Create: `cloudfunctions/get-market-turnover/application/build-turnover-response.ts`
-- Create: `cloudfunctions/get-market-turnover/infrastructure/turnover-repository.ts`
+- Create: `cloudfunctions/get-market-turnover/application/service.ts`
+- Create: `cloudfunctions/get-market-turnover/infrastructure/repository.ts`
 - Create: `cloudfunctions/get-market-turnover/infrastructure/providers/tencent.ts`
 - Modify: `cloudfunctions/get-market-turnover/index.ts`
 - Modify: `cloudfunctions/get-market-turnover/eastmoney.ts`
-- Test: `cloudfunctions/get-market-turnover/application/build-turnover-response.test.ts`
+- Test: `cloudfunctions/get-market-turnover/application/service.test.ts`
+- Test: `cloudfunctions/get-market-turnover/infrastructure/repository.test.ts`
+- Test: `cloudfunctions/get-market-turnover/infrastructure/providers/tencent.test.ts`
 
-- [ ] Add provider/repository fakes for pre-open fallback, live comparison, missing provider data, and cache read/write behavior.
-- [ ] Move `pipeline_meta` reads/writes behind a focused repository interface.
-- [ ] Move Tencent day-minute fetching behind a provider module.
-- [ ] Move response assembly and market-session orchestration into the application module.
-- [ ] Leave `index.ts` responsible only for HTTP parsing, status codes, and invoking the application use case.
-- [ ] Keep all legacy route aliases (`/`, `/briefs`, `/events`, `/backfill`) and `/health` behavior covered.
-- [ ] Run the application tests and all cloud-function tests.
+- [x] Add provider/repository fakes for pre-open fallback, live comparison, missing provider data, and cache read/write behavior.
+- [x] Move `pipeline_meta` reads/writes behind a focused repository interface.
+- [x] Move Tencent day-minute fetching behind a provider module.
+- [x] Move response assembly and market-session orchestration into the application module.
+- [x] Leave `index.ts` responsible only for runtime composition and invoking the application use case; HTTP parsing and status codes remain in `http.ts`.
+- [x] Keep the existing market-turnover aliases (`/`, `/get-market-turnover`) and `/health` behavior covered by the HTTP boundary tests.
+- [x] Run the application tests and all cloud-function tests.
 
 ## Task 5: Move frontend lifecycle out of routes
 

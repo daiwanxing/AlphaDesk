@@ -41,9 +41,9 @@ export async function fetchFomcMeetingsForYear(year: number): Promise<FomcMeetin
   const nextYear = html.indexOf(`${year + 1} FOMC Meetings`, start);
   const chunk = html.slice(start, nextYear > 0 ? nextYear : start + 60_000);
 
-  const statementIds = [...chunk.matchAll(/\/newsevents\/pressreleases\/monetary(\d{8})a\.htm/g)].map(
-    (m) => m[1]!,
-  );
+  const statementIds = [
+    ...chunk.matchAll(/\/newsevents\/pressreleases\/monetary(\d{8})a\.htm/g),
+  ].map((m) => m[1]!);
   const minuteIds = new Set(
     [...chunk.matchAll(/\/monetarypolicy\/fomcminutes(\d{8})\.htm/g)].map((m) => m[1]!),
   );

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isInEarningsWindow,
-  isInFomcSlotWindow,
-  resolveDetectMode,
-} from "./detect-windows.ts";
+import { isInEarningsWindow, isInFomcSlotWindow, resolveDetectMode } from "./detect-windows.ts";
 
 describe("detect-windows", () => {
   it("idle when no windows and daily not due", () => {

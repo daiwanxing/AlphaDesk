@@ -10,8 +10,7 @@ import {
   type SlimFomc,
 } from "./schedule";
 
-const ENV_ID =
-  process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
+const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
 const DAILY_INTERVAL_HOURS = Number(process.env.DETECT_DAILY_HOURS || 18);
 const SCHEDULE_CACHE_MAX_AGE_MS = Number(
@@ -69,21 +68,21 @@ async function loadMeta(db: ReturnType<typeof dbOf>): Promise<PipelineMeta> {
 async function saveMeta(db: ReturnType<typeof dbOf>, patch: PipelineMeta): Promise<void> {
   const prev = await loadMeta(db);
   const { _id: _ignored, ...prevRest } = prev;
-  await db.collection("pipeline_meta").doc("detect").set({
-    ...prevRest,
-    ...patch,
-    scheduleByYear: {
-      ...(prev.scheduleByYear ?? {}),
-      ...(patch.scheduleByYear ?? {}),
-    },
-    updatedAt: nowIso(),
-  });
+  await db
+    .collection("pipeline_meta")
+    .doc("detect")
+    .set({
+      ...prevRest,
+      ...patch,
+      scheduleByYear: {
+        ...(prev.scheduleByYear ?? {}),
+        ...(patch.scheduleByYear ?? {}),
+      },
+      updatedAt: nowIso(),
+    });
 }
 
-async function loadBriefsForYear(
-  db: ReturnType<typeof dbOf>,
-  year: number,
-): Promise<BriefRow[]> {
+async function loadBriefsForYear(db: ReturnType<typeof dbOf>, year: number): Promise<BriefRow[]> {
   const res = await db.collection("briefs").where({ year }).limit(1000).get();
   return (res.data ?? []) as BriefRow[];
 }
@@ -95,9 +94,7 @@ async function ensureSchedule(
   forceRefresh: boolean,
 ): Promise<{ snapshot: ScheduleSnapshot; fetchedExternal: boolean }> {
   const cached = meta.scheduleByYear?.[String(year)];
-  const fresh =
-    cached &&
-    Date.now() - Date.parse(cached.fetchedAt) < SCHEDULE_CACHE_MAX_AGE_MS;
+  const fresh = cached && Date.now() - Date.parse(cached.fetchedAt) < SCHEDULE_CACHE_MAX_AGE_MS;
   if (!forceRefresh && fresh && cached) {
     return { snapshot: cached, fetchedExternal: false };
   }
@@ -122,9 +119,7 @@ function collectEnqueueTargets(
   briefs: BriefRow[],
   opts: { onlyEventIds?: Set<string> },
 ): EnqueueItem[] {
-  const byKey = new Map<string, BriefRow>(
-    briefs.map((b) => [`${b.eventId}__${b.slot}`, b]),
-  );
+  const byKey = new Map<string, BriefRow>(briefs.map((b) => [`${b.eventId}__${b.slot}`, b]));
   const out: EnqueueItem[] = [];
 
   for (const ev of events) {
@@ -194,27 +189,27 @@ async function writeNotApplicableSep(
   for (const ev of events) {
     if (ev.kind !== "fomc" || ev.hasSep) continue;
     const briefId = `${ev.id}__sep`;
-    await db.collection("briefs").doc(briefId).set({
-      eventId: ev.id,
-      eventKind: "fomc",
-      slot: "sep",
-      year: ev.year,
-      status: "not_applicable",
-      disclaimer: "AI 生成 · 非正式官方文件",
-      sourceFingerprint: `fed-${ev.id}-sep-na`,
-      sourceUrls: [],
-      updatedAt: ts,
-      createdAt: ts,
-    });
+    await db
+      .collection("briefs")
+      .doc(briefId)
+      .set({
+        eventId: ev.id,
+        eventKind: "fomc",
+        slot: "sep",
+        year: ev.year,
+        status: "not_applicable",
+        disclaimer: "AI 生成 · 非正式官方文件",
+        sourceFingerprint: `fed-${ev.id}-sep-na`,
+        sourceUrls: [],
+        updatedAt: ts,
+        createdAt: ts,
+      });
     n += 1;
   }
   return n;
 }
 
-async function enqueueJobs(
-  db: ReturnType<typeof dbOf>,
-  items: EnqueueItem[],
-): Promise<string[]> {
+async function enqueueJobs(db: ReturnType<typeof dbOf>, items: EnqueueItem[]): Promise<string[]> {
   const ts = nowIso();
   const jobIds: string[] = [];
   for (const item of items) {
@@ -234,18 +229,21 @@ async function enqueueJobs(
       createdAt: ts,
       updatedAt: ts,
     });
-    await db.collection("briefs").doc(briefId).set({
-      eventId: item.eventId,
-      eventKind: item.eventId.startsWith("fomc-") ? "fomc" : "earnings",
-      slot: item.slot,
-      year: item.year,
-      status: "queued",
-      sourceFingerprint: item.sourceFingerprint,
-      sourceUrls: item.sourceUrls,
-      disclaimer: "AI 生成 · 非正式官方文件",
-      updatedAt: ts,
-      createdAt: ts,
-    });
+    await db
+      .collection("briefs")
+      .doc(briefId)
+      .set({
+        eventId: item.eventId,
+        eventKind: item.eventId.startsWith("fomc-") ? "fomc" : "earnings",
+        slot: item.slot,
+        year: item.year,
+        status: "queued",
+        sourceFingerprint: item.sourceFingerprint,
+        sourceUrls: item.sourceUrls,
+        disclaimer: "AI 生成 · 非正式官方文件",
+        updatedAt: ts,
+        createdAt: ts,
+      });
     jobIds.push(jid);
   }
   return jobIds;
@@ -270,8 +268,7 @@ export async function main(event: DetectEvent = {}, context: DetectContext = {})
   if (!needForceFetch) {
     const cached = meta.scheduleByYear?.[String(year)];
     const cacheFresh =
-      cached &&
-      Date.now() - Date.parse(cached.fetchedAt) < SCHEDULE_CACHE_MAX_AGE_MS;
+      cached && Date.now() - Date.parse(cached.fetchedAt) < SCHEDULE_CACHE_MAX_AGE_MS;
     if (cacheFresh && cached) {
       const windows = computeActiveWindows(today, cached.events, briefs);
       const modeFromCache = resolveDetectMode({
@@ -301,12 +298,7 @@ export async function main(event: DetectEvent = {}, context: DetectContext = {})
     }
   }
 
-  let { snapshot, fetchedExternal } = await ensureSchedule(
-    db,
-    meta,
-    year,
-    needForceFetch,
-  );
+  let { snapshot, fetchedExternal } = await ensureSchedule(db, meta, year, needForceFetch);
   // ensureSchedule 可能写库，重读 meta
   meta = await loadMeta(db);
 
@@ -344,10 +336,7 @@ export async function main(event: DetectEvent = {}, context: DetectContext = {})
   const windowsAfterFetch = computeActiveWindows(today, snapshot.events, briefs);
   const naCount = await writeNotApplicableSep(db, snapshot.events);
 
-  const onlyIds =
-    mode === "dense"
-      ? new Set(windowsAfterFetch.map((w) => w.eventId))
-      : undefined;
+  const onlyIds = mode === "dense" ? new Set(windowsAfterFetch.map((w) => w.eventId)) : undefined;
 
   // dense：只扫窗口内事件；daily/backfill：全年已披露/已发布缺口
   const targets = collectEnqueueTargets(snapshot.events, briefs, {

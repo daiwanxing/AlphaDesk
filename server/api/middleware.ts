@@ -2,7 +2,12 @@ import type { ServerResponse } from "node:http";
 import type { Connect } from "vite";
 import { cacheHeaders, getEventDetail, getEventsTimeline, parseYearParam } from "./routes.ts";
 
-function sendJson(res: ServerResponse, status: number, body: unknown, extraHeaders?: Record<string, string>) {
+function sendJson(
+  res: ServerResponse,
+  status: number,
+  body: unknown,
+  extraHeaders?: Record<string, string>,
+) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   if (extraHeaders) {

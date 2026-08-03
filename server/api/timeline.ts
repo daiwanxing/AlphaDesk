@@ -75,9 +75,7 @@ export async function buildTimeline(year: number): Promise<{
     fetchFomcMeetingsForYear(year),
   ]);
 
-  const disclosedKeys = new Set(
-    secFilings.map((f) => `${f.ticker}-${f.reportDate}-${f.form}`),
-  );
+  const disclosedKeys = new Set(secFilings.map((f) => `${f.ticker}-${f.reportDate}-${f.form}`));
 
   const earningsEvents: EarningsEvent[] = secFilings.map((f) => ({
     kind: "earnings",
@@ -104,9 +102,7 @@ export async function buildTimeline(year: number): Promise<{
         e.ticker === u.ticker &&
         e.status === "disclosed" &&
         e.actualDate &&
-        Math.abs(
-          new Date(e.actualDate).getTime() - new Date(u.scheduledDate).getTime(),
-        ) <
+        Math.abs(new Date(e.actualDate).getTime() - new Date(u.scheduledDate).getTime()) <
           14 * 86400000,
     );
     if (alreadyDisclosed) continue;
@@ -150,13 +146,9 @@ export async function buildTimeline(year: number): Promise<{
 
   const events: TimelineEvent[] = [...earningsEvents, ...fomcEvents].sort((a, b) => {
     const dateA =
-      a.kind === "earnings"
-        ? a.actualDate ?? a.scheduledDate ?? "9999"
-        : a.meetingEndDate;
+      a.kind === "earnings" ? (a.actualDate ?? a.scheduledDate ?? "9999") : a.meetingEndDate;
     const dateB =
-      b.kind === "earnings"
-        ? b.actualDate ?? b.scheduledDate ?? "9999"
-        : b.meetingEndDate;
+      b.kind === "earnings" ? (b.actualDate ?? b.scheduledDate ?? "9999") : b.meetingEndDate;
     return dateA.localeCompare(dateB);
   });
 

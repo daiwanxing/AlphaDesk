@@ -3,7 +3,7 @@ import { buildTimeline, findEvent } from "./timeline.ts";
 const CACHE_CONTROL = "public, s-maxage=1800, stale-while-revalidate=3600";
 
 export function parseYearParam(raw: unknown): number | null {
-  const y = Number(Array.isArray(raw) ? raw[0] : raw ?? new Date().getFullYear());
+  const y = Number(Array.isArray(raw) ? raw[0] : (raw ?? new Date().getFullYear()));
   if (!Number.isInteger(y) || y < 2020 || y > 2030) return null;
   return y;
 }

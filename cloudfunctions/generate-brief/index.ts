@@ -11,19 +11,12 @@ import {
   type BriefSlot,
 } from "./prompts";
 
-const ENV_ID =
-  process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
+const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
 const LOCK_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_ATTEMPTS = 5;
 /** attempts 失败后的退避（第 1…5 次失败） */
-const BACKOFF_MS = [
-  60_000,
-  5 * 60_000,
-  15 * 60_000,
-  60 * 60_000,
-  6 * 60 * 60_000,
-];
+const BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000, 60 * 60_000, 6 * 60 * 60_000];
 
 type JobDoc = {
   _id: string;
@@ -93,16 +86,13 @@ async function reclaimStaleLocks(db: Db, _: DbCommand): Promise<number> {
   let n = 0;
   const ts = nowIso();
   for (const row of (stale.data ?? []) as JobDoc[]) {
-    const r = await db
-      .collection("jobs")
-      .where({ _id: row._id, status: "processing" })
-      .update({
-        status: "queued",
-        lockedAt: _.remove(),
-        lockOwner: _.remove(),
-        updatedAt: ts,
-        lastError: "lock expired; requeued",
-      });
+    const r = await db.collection("jobs").where({ _id: row._id, status: "processing" }).update({
+      status: "queued",
+      lockedAt: _.remove(),
+      lockOwner: _.remove(),
+      updatedAt: ts,
+      lastError: "lock expired; requeued",
+    });
     n += r.updated ?? 0;
   }
   return n;
@@ -173,12 +163,7 @@ async function buildSections(
   }
 
   const fetched = await fetchSourceForJob(job);
-  console.warn(
-    "[generate-brief] source fetched",
-    job.eventId,
-    job.slot,
-    fetched.charCount,
-  );
+  console.warn("[generate-brief] source fetched", job.eventId, job.slot, fetched.charCount);
   const llm = await generateSectionsWithDeepSeek({
     slot: job.slot,
     sourceText: fetched.text,
@@ -246,36 +231,40 @@ async function markJobFailed(
   const attempts = (job.attempts ?? 0) + 1;
   const maxAttempts = job.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   const exhausted = attempts >= maxAttempts;
-  const nextRunAt = exhausted
-    ? ts
-    : new Date(Date.now() + backoffMs(attempts)).toISOString();
+  const nextRunAt = exhausted ? ts : new Date(Date.now() + backoffMs(attempts)).toISOString();
 
-  await db.collection("jobs").doc(job._id).update({
-    status: exhausted ? "failed" : "queued",
-    attempts,
-    nextRunAt,
-    lastError: errMsg,
-    lockedAt: _.remove(),
-    lockOwner: _.remove(),
-    updatedAt: ts,
-  });
+  await db
+    .collection("jobs")
+    .doc(job._id)
+    .update({
+      status: exhausted ? "failed" : "queued",
+      attempts,
+      nextRunAt,
+      lastError: errMsg,
+      lockedAt: _.remove(),
+      lockOwner: _.remove(),
+      updatedAt: ts,
+    });
 
   const briefId = `${job.eventId}__${job.slot}`;
   const briefStatus = exhausted ? "failed_exhausted" : "failed";
-  await db.collection("briefs").doc(briefId).set({
-    eventId: job.eventId,
-    eventKind: inferEventKind(job.eventId),
-    slot: job.slot,
-    year: job.year ?? new Date().getFullYear(),
-    ...(inferTicker(job.eventId) ? { ticker: inferTicker(job.eventId) } : {}),
-    status: briefStatus,
-    errorMessage: errMsg,
-    sourceFingerprint: job.sourceFingerprint,
-    sourceUrls: job.sourceUrls ?? [],
-    disclaimer: defaultDisclaimer(),
-    updatedAt: ts,
-    createdAt: ts,
-  });
+  await db
+    .collection("briefs")
+    .doc(briefId)
+    .set({
+      eventId: job.eventId,
+      eventKind: inferEventKind(job.eventId),
+      slot: job.slot,
+      year: job.year ?? new Date().getFullYear(),
+      ...(inferTicker(job.eventId) ? { ticker: inferTicker(job.eventId) } : {}),
+      status: briefStatus,
+      errorMessage: errMsg,
+      sourceFingerprint: job.sourceFingerprint,
+      sourceUrls: job.sourceUrls ?? [],
+      disclaimer: defaultDisclaimer(),
+      updatedAt: ts,
+      createdAt: ts,
+    });
 
   return { exhausted };
 }

@@ -1,10 +1,4 @@
-import type {
-  BriefDoc,
-  BriefSlot,
-  FomcEvent,
-  ProductBriefCardState,
-  TimelineEvent,
-} from "./types";
+import type { BriefDoc, BriefSlot, FomcEvent, ProductBriefCardState, TimelineEvent } from "./types";
 
 export type BriefCard = {
   slot: BriefSlot;

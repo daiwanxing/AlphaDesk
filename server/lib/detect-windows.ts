@@ -44,11 +44,7 @@ export function isInEarningsWindow(
 }
 
 /** FOMC 各槽位相对会议结束日的窗口 */
-export function isInFomcSlotWindow(
-  today: string,
-  meetingEndDate: string,
-  slot: FomcSlot,
-): boolean {
+export function isInFomcSlotWindow(today: string, meetingEndDate: string, slot: FomcSlot): boolean {
   if (slot === "minutes") {
     return isOnOrBetween(today, addDays(meetingEndDate, 14), addDays(meetingEndDate, 28));
   }

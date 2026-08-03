@@ -2,14 +2,9 @@ import http from "node:http";
 import { URL } from "node:url";
 import cloudbase from "@cloudbase/node-sdk";
 
-const ENV_ID =
-  process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
+const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
-function sendJson(
-  res: http.ServerResponse,
-  statusCode: number,
-  data: unknown,
-): void {
+function sendJson(res: http.ServerResponse, statusCode: number, data: unknown): void {
   // 不设 CORS 头，避免与网关 Origin 反射拼成 "origin,*"
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",

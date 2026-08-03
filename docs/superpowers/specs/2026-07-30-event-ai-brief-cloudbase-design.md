@@ -12,8 +12,8 @@
 
 ### 1.1 原则
 
-- **写路径（生成）：** CloudBase **窗口驱动检测**（临近披露/会议加密 + 日常低频兜底）→ 入队 → 抓原文 → LLM → 写入数据库   
-- **读路径（展示）：** 详情页只读已存 `briefs`，**禁止**因 HTTP 请求同步调 LLM  
+- **写路径（生成）：** CloudBase **窗口驱动检测**（临近披露/会议加密 + 日常低频兜底）→ 入队 → 抓原文 → LLM → 写入数据库
+- **读路径（展示）：** 详情页只读已存 `briefs`，**禁止**因 HTTP 请求同步调 LLM
 - **全栈 CloudBase：** 静态前端、时间线 API、AI 管线均在腾讯云 CloudBase；逻辑源码仍在仓库 `server/lib/*`（本地 Vite middleware 与云函数 `get-events` 共用）
 
 ### 1.2 逻辑流
@@ -39,14 +39,14 @@
 
 ### 1.3 部署边界（现行）
 
-| 组件 | 放哪 | 职责 |
-|------|------|------|
-| 前端 | CloudBase **静态网站托管**（Vite `dist/`） | 详情页合并两路数据；SPA 404 → `index.html` |
-| 时间线 API | CloudBase HTTP Function `get-events`（本地仍可用 Vite middleware） | 事件列表、固定信息、官方 URL |
-| AI 管线 | CloudBase Event Functions + Timer | 检测、生成、重试 |
-| 摘要读 API | CloudBase HTTP Function `get-briefs` | `GET` briefs |
-| Backfill 触发 | CloudBase HTTP Function `trigger-backfill` | 历史年补扫 |
-| 原文归档 | CloudBase 云存储（可选） | 长文/PDF 备份，便于重试与审计 |
+| 组件          | 放哪                                                               | 职责                                       |
+| ------------- | ------------------------------------------------------------------ | ------------------------------------------ |
+| 前端          | CloudBase **静态网站托管**（Vite `dist/`）                         | 详情页合并两路数据；SPA 404 → `index.html` |
+| 时间线 API    | CloudBase HTTP Function `get-events`（本地仍可用 Vite middleware） | 事件列表、固定信息、官方 URL               |
+| AI 管线       | CloudBase Event Functions + Timer                                  | 检测、生成、重试                           |
+| 摘要读 API    | CloudBase HTTP Function `get-briefs`                               | `GET` briefs                               |
+| Backfill 触发 | CloudBase HTTP Function `trigger-backfill`                         | 历史年补扫                                 |
+| 原文归档      | CloudBase 云存储（可选）                                           | 长文/PDF 备份，便于重试与审计              |
 
 **不再使用 Vercel。** 网关默认域：`https://<envId>-<appId>.tcloudbaseapp.com`；路径示例：`/get-events`、`/get-briefs`、`/trigger-backfill`。
 
@@ -60,27 +60,27 @@
 
 一条文档 = **一个事件下的一个材料槽位**的最新成功（或进行中）摘要。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `_id` | string | 建议稳定 ID，见下方主键约定 |
-| `eventId` | string | 与时间线事件 ID 对齐，如 `earnings-AAPL-...` / `fomc-2026-03-...` |
-| `eventKind` | `"earnings"` \| `"fomc"` | |
-| `slot` | string | 财报固定 `"earnings"`；FOMC 为 `"statement"` \| `"minutes"` \| `"sep"` |
-| `year` | number | 日历年，便于按年查询 |
-| `ticker` | string? | 仅财报 |
-| `status` | enum | 见 §2.4 |
-| `title` | string? | 展示用短标题 |
-| `sections` | array | 结构化块：`{ id, heading, body }[]`，对应 PRD §5 |
-| `plainText` | string? | 可选：拼接纯文本，便于检索/调试 |
-| `disclaimer` | string | 固定文案键或全文：「AI 生成 · 非正式官方文件」 |
-| `sourceFingerprint` | string | 幂等键：材料版本指纹（accession / 材料 URL / ETag 等） |
-| `sourceUrls` | string[] | 生成所依据的官方 URL |
-| `model` | string? | 模型 ID |
-| `promptVersion` | string | 提示词版本，如 `earnings-std-v1` |
-| `generatedAt` | string? | ISO 时间；就绪时必有 |
-| `errorMessage` | string? | 失败时对人可读短句 |
-| `updatedAt` | string | ISO |
-| `createdAt` | string | ISO |
+| 字段                | 类型                     | 说明                                                                   |
+| ------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `_id`               | string                   | 建议稳定 ID，见下方主键约定                                            |
+| `eventId`           | string                   | 与时间线事件 ID 对齐，如 `earnings-AAPL-...` / `fomc-2026-03-...`      |
+| `eventKind`         | `"earnings"` \| `"fomc"` |                                                                        |
+| `slot`              | string                   | 财报固定 `"earnings"`；FOMC 为 `"statement"` \| `"minutes"` \| `"sep"` |
+| `year`              | number                   | 日历年，便于按年查询                                                   |
+| `ticker`            | string?                  | 仅财报                                                                 |
+| `status`            | enum                     | 见 §2.4                                                                |
+| `title`             | string?                  | 展示用短标题                                                           |
+| `sections`          | array                    | 结构化块：`{ id, heading, body }[]`，对应 PRD §5                       |
+| `plainText`         | string?                  | 可选：拼接纯文本，便于检索/调试                                        |
+| `disclaimer`        | string                   | 固定文案键或全文：「AI 生成 · 非正式官方文件」                         |
+| `sourceFingerprint` | string                   | 幂等键：材料版本指纹（accession / 材料 URL / ETag 等）                 |
+| `sourceUrls`        | string[]                 | 生成所依据的官方 URL                                                   |
+| `model`             | string?                  | 模型 ID                                                                |
+| `promptVersion`     | string                   | 提示词版本，如 `earnings-std-v1`                                       |
+| `generatedAt`       | string?                  | ISO 时间；就绪时必有                                                   |
+| `errorMessage`      | string?                  | 失败时对人可读短句                                                     |
+| `updatedAt`         | string                   | ISO                                                                    |
+| `createdAt`         | string                   | ISO                                                                    |
 
 **主键约定（推荐用 `_id` 直接等于）：**
 
@@ -94,22 +94,22 @@
 
 ### 2.2 集合 `jobs`（生成队列 / 重试）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `_id` | string | 可用 `job_{eventId}_{slot}_{fingerprint短哈希}` |
-| `eventId` | string | |
-| `slot` | string | 同 briefs |
-| `sourceFingerprint` | string | |
-| `sourceUrls` | string[] | |
-| `status` | `"queued"` \| `"processing"` \| `"succeeded"` \| `"failed"` \| `"cancelled"` | |
-| `attempts` | number | |
-| `maxAttempts` | number | 建议默认 5 |
-| `nextRunAt` | string | ISO；失败退避后的下次可跑时间 |
-| `lockedAt` | string? | claim 时写入，防并发双跑 |
-| `lockOwner` | string? | 请求 ID / 实例短 ID |
-| `lastError` | string? | |
-| `createdAt` | string | |
-| `updatedAt` | string | |
+| 字段                | 类型                                                                         | 说明                                            |
+| ------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| `_id`               | string                                                                       | 可用 `job_{eventId}_{slot}_{fingerprint短哈希}` |
+| `eventId`           | string                                                                       |                                                 |
+| `slot`              | string                                                                       | 同 briefs                                       |
+| `sourceFingerprint` | string                                                                       |                                                 |
+| `sourceUrls`        | string[]                                                                     |                                                 |
+| `status`            | `"queued"` \| `"processing"` \| `"succeeded"` \| `"failed"` \| `"cancelled"` |                                                 |
+| `attempts`          | number                                                                       |                                                 |
+| `maxAttempts`       | number                                                                       | 建议默认 5                                      |
+| `nextRunAt`         | string                                                                       | ISO；失败退避后的下次可跑时间                   |
+| `lockedAt`          | string?                                                                      | claim 时写入，防并发双跑                        |
+| `lockOwner`         | string?                                                                      | 请求 ID / 实例短 ID                             |
+| `lastError`         | string?                                                                      |                                                 |
+| `createdAt`         | string                                                                       |                                                 |
+| `updatedAt`         | string                                                                       |                                                 |
 
 **幂等规则：**
 
@@ -120,29 +120,29 @@
 
 存抓取元数据；大文件放云存储。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `_id` | string | 与 `sourceFingerprint` 对齐或哈希 |
-| `eventId` | string | |
-| `slot` | string | |
-| `sourceUrls` | string[] | |
-| `storagePath` | string? | 云存储路径 |
-| `contentType` | string? | `text/html` / `application/pdf` / `text/plain` |
-| `byteSize` | number? | |
-| `fetchedAt` | string | |
+| 字段          | 类型     | 说明                                           |
+| ------------- | -------- | ---------------------------------------------- |
+| `_id`         | string   | 与 `sourceFingerprint` 对齐或哈希              |
+| `eventId`     | string   |                                                |
+| `slot`        | string   |                                                |
+| `sourceUrls`  | string[] |                                                |
+| `storagePath` | string?  | 云存储路径                                     |
+| `contentType` | string?  | `text/html` / `application/pdf` / `text/plain` |
+| `byteSize`    | number?  |                                                |
+| `fetchedAt`   | string   |                                                |
 
 ### 2.4 `briefs.status` 与产品状态映射
 
-| `briefs.status` | 产品表现（PRD §6.1） |
-|-----------------|----------------------|
-| 文档不存在 + 时间线显示未发生 | **未发生**占位 |
-| 文档不存在 + 时间线显示材料已可用 | **撰写中**（见 §4.1 合并规则；detect 尚未跑到之前也按此推断） |
-| `pending_material` | 材料槽位已知但官方未发布（FOMC）→ **未发生**占位 |
-| `queued` / `processing` | **撰写中** |
-| `ready` | **已就绪** |
-| `failed` | **失败**；若 `jobs.attempts < maxAttempts` 文案含「将自动重试」 |
-| `failed_exhausted` | **失败耗尽**：文案改为「解读生成失败」**不含**「将自动重试」；仅 `admin-requeue` 可恢复 |
-| `not_applicable` | **不适用**（如无 SEP） |
+| `briefs.status`                   | 产品表现（PRD §6.1）                                                                    |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| 文档不存在 + 时间线显示未发生     | **未发生**占位                                                                          |
+| 文档不存在 + 时间线显示材料已可用 | **撰写中**（见 §4.1 合并规则；detect 尚未跑到之前也按此推断）                           |
+| `pending_material`                | 材料槽位已知但官方未发布（FOMC）→ **未发生**占位                                        |
+| `queued` / `processing`           | **撰写中**                                                                              |
+| `ready`                           | **已就绪**                                                                              |
+| `failed`                          | **失败**；若 `jobs.attempts < maxAttempts` 文案含「将自动重试」                         |
+| `failed_exhausted`                | **失败耗尽**：文案改为「解读生成失败」**不含**「将自动重试」；仅 `admin-requeue` 可恢复 |
+| `not_applicable`                  | **不适用**（如无 SEP）                                                                  |
 
 > 前端**不得**仅因 `briefs` 为空数组就显示「未发生」：必须以时间线事件状态 / `materials[].published` 为准（§4.1）。
 
@@ -157,11 +157,11 @@
 
 CloudBase 侧 `eventId` **必须**与现有时间线 API 生成规则一致，禁止另造一套：
 
-| 事件 | ID 规则（与当前实现一致） |
-|------|---------------------------|
-| 已披露财报 | `earnings-{ticker}-{accessionNumber去横杠}` |
+| 事件       | ID 规则（与当前实现一致）                                          |
+| ---------- | ------------------------------------------------------------------ |
+| 已披露财报 | `earnings-{ticker}-{accessionNumber去横杠}`                        |
 | 待披露财报 | `earnings-pending-{ticker}-{YYYYMMDD}` — **detect 不得为其建 job** |
-| FOMC | `fomc-{fedInternalId}`，如 `fomc-20260318` |
+| FOMC       | `fomc-{fedInternalId}`，如 `fomc-20260318`                         |
 
 `briefs._id` = `{eventId}__{slot}`。
 
@@ -173,33 +173,33 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ### 3.1 `detect-new-materials`（Event + Timer）
 
-| 项 | 内容 |
-|----|------|
-| **类型** | Event Function |
-| **触发** | Timer **每 30 分钟唤醒一次**；函数内部按 §3.1.1 决定本轮是「加密检测 / 日常兜底 / 直接空退出」——**不是**全年每天都对 SEC/Fed 做全量高频爬取 |
-| **输入** | `event` 定时载荷；可选 `year` 默认当前年；可选强制 `mode: "dense" \| "daily" \| "backfill"` |
+| 项       | 内容                                                                                                                                                                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **类型** | Event Function                                                                                                                                                                                                                                                                |
+| **触发** | Timer **每 30 分钟唤醒一次**；函数内部按 §3.1.1 决定本轮是「加密检测 / 日常兜底 / 直接空退出」——**不是**全年每天都对 SEC/Fed 做全量高频爬取                                                                                                                                   |
+| **输入** | `event` 定时载荷；可选 `year` 默认当前年；可选强制 `mode: "dense" \| "daily" \| "backfill"`                                                                                                                                                                                   |
 | **职责** | 1）根据时间线日程计算是否处于检测窗口（§3.1.1）2）窗口内或日常兜底到期时：拉 SEC Mag7 filing / Fed 材料链接 3）与 `briefs` 指纹对比 4）对缺口创建 `jobs`（queued）并 upsert `briefs` 状态 5）对「无 SEP」写 `not_applicable` 6）有入队则 `callFunction` 唤醒 `generate-brief` |
-| **不做** | 不调 LLM；窗口外且未到日常兜底时**不**请求 SEC/Fed |
-| **超时** | 建议 60s；检测应轻量。若 SEC 拉取过慢可拆「按 ticker 分片」 |
+| **不做** | 不调 LLM；窗口外且未到日常兜底时**不**请求 SEC/Fed                                                                                                                                                                                                                            |
+| **超时** | 建议 60s；检测应轻量。若 SEC 拉取过慢可拆「按 ticker 分片」                                                                                                                                                                                                                   |
 
 **伪职责输出：** `{ mode, enqueued, skipped, earlyExit, errors }`
 
 #### 3.1.1 检测节奏：窗口加密 + 日常兜底（已定）
 
-| 模式 | 何时进入 | 行为 |
-|------|----------|------|
-| **加密（dense）** | 存在「活跃窗口」内的事件（见下表） | 本轮完整检测相关 ticker / FOMC 材料；发现新材料即入队 |
-| **日常兜底（daily）** | 无活跃窗口，且距上次成功兜底 ≥ **12～24h** | 轻量全量扫当年一次，补日程漂移与漏检 |
-| **空退出（idle）** | 无活跃窗口，且日常兜底未到期，且无待重试信号 | **立即返回**，不打外部数据源 |
+| 模式                  | 何时进入                                     | 行为                                                  |
+| --------------------- | -------------------------------------------- | ----------------------------------------------------- |
+| **加密（dense）**     | 存在「活跃窗口」内的事件（见下表）           | 本轮完整检测相关 ticker / FOMC 材料；发现新材料即入队 |
+| **日常兜底（daily）** | 无活跃窗口，且距上次成功兜底 ≥ **12～24h**   | 轻量全量扫当年一次，补日程漂移与漏检                  |
+| **空退出（idle）**    | 无活跃窗口，且日常兜底未到期，且无待重试信号 | **立即返回**，不打外部数据源                          |
 
 **活跃窗口定义（相对「今天」）：**
 
-| 事件类型 | 锚点 | 窗口 |
-|----------|------|------|
-| 七姐妹财报 | Nasdaq **预计披露日**；若已变为已披露则以 **实际披露日** 为准 | 预计日前 **1 天** ～ 实际披露后 **3 天**（仍无 brief/`ready` 则保持加密直至入队成功或出窗） |
-| FOMC Statement | **会议结束日** | 会议日前 **1 天** ～ 会议日后 **3 天** |
-| FOMC Minutes | **会议结束日** | 会议日后 **14～28 天**（纪要约 3 周发布；窗口覆盖等待期） |
-| FOMC SEP | 同 Statement（仅 `hasSep` 会议） | 与 Statement 同窗；已 `not_applicable` 或 `ready` 则不再加密 |
+| 事件类型       | 锚点                                                          | 窗口                                                                                        |
+| -------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 七姐妹财报     | Nasdaq **预计披露日**；若已变为已披露则以 **实际披露日** 为准 | 预计日前 **1 天** ～ 实际披露后 **3 天**（仍无 brief/`ready` 则保持加密直至入队成功或出窗） |
+| FOMC Statement | **会议结束日**                                                | 会议日前 **1 天** ～ 会议日后 **3 天**                                                      |
+| FOMC Minutes   | **会议结束日**                                                | 会议日后 **14～28 天**（纪要约 3 周发布；窗口覆盖等待期）                                   |
+| FOMC SEP       | 同 Statement（仅 `hasSep` 会议）                              | 与 Statement 同窗；已 `not_applicable` 或 `ready` 则不再加密                                |
 
 **停止加密：** 该 `eventId+slot` 已 `ready`（或 SEP `not_applicable`）→ 不再因该槽位保持 dense。
 
@@ -207,25 +207,25 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ### 3.2 `generate-brief`（Event；可 Timer + 被 invoke）
 
-| 项 | 内容 |
-|----|------|
-| **类型** | Event Function |
-| **触发** | ① `detect-new-materials` 入队后 **立即 invoke**（主路径）；② Timer 每 **10～15 分钟**扫队列（仅消费 `queued` / 到期重试；**无 job 则空退出**） |
-| **输入** | 可选指定 `jobId`；否则领取 `status=queued` 且 `nextRunAt <= now` 的 N 条（建议 N=1～2，防超时） |
-| **职责** | 1）原子 claim（queued→processing + lock）2）抓取原文（HTML/PDF→文本）3）按 `slot` 选 prompt 4）`@cloudbase/node-sdk` AI `generateText` 5）解析为 `sections` 6）写 `briefs`=`ready`，job=`succeeded` 7）失败：attempts++、指数退避写 `nextRunAt`、`briefs`=`failed` |
-| **不做** | 不对外暴露；不扫描全市场；无待处理 job 时不调 LLM |
-| **超时 / 内存** | LLM + 长文：建议 timeout **120–300s**、内存 **512MB+**；单次只处理少量 job |
+| 项              | 内容                                                                                                                                                                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **类型**        | Event Function                                                                                                                                                                                                                                                     |
+| **触发**        | ① `detect-new-materials` 入队后 **立即 invoke**（主路径）；② Timer 每 **10～15 分钟**扫队列（仅消费 `queued` / 到期重试；**无 job 则空退出**）                                                                                                                     |
+| **输入**        | 可选指定 `jobId`；否则领取 `status=queued` 且 `nextRunAt <= now` 的 N 条（建议 N=1～2，防超时）                                                                                                                                                                    |
+| **职责**        | 1）原子 claim（queued→processing + lock）2）抓取原文（HTML/PDF→文本）3）按 `slot` 选 prompt 4）`@cloudbase/node-sdk` AI `generateText` 5）解析为 `sections` 6）写 `briefs`=`ready`，job=`succeeded` 7）失败：attempts++、指数退避写 `nextRunAt`、`briefs`=`failed` |
+| **不做**        | 不对外暴露；不扫描全市场；无待处理 job 时不调 LLM                                                                                                                                                                                                                  |
+| **超时 / 内存** | LLM + 长文：建议 timeout **120–300s**、内存 **512MB+**；单次只处理少量 job                                                                                                                                                                                         |
 
 **Claim 规则：** 仅更新 `status===queued` 且（无锁或锁过期）的文档，避免双实例重复计费。
 
 ### 3.3 `get-briefs`（HTTP Function）
 
-| 项 | 内容 |
-|----|------|
-| **类型** | HTTP Function（listen `9000` + CORS） |
-| **触发** | `GET /briefs?eventId=` 或 `GET /briefs?year=&eventIds=` |
-| **职责** | 只读查询 `briefs`；组装产品所需字段；**绝不**触发 LLM |
-| **鉴权** | 单用户阶段：可用安全规则放宽只读 + 不写；或简单 API Key 头。禁止匿名写 |
+| 项           | 内容                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| **类型**     | HTTP Function（listen `9000` + CORS）                                                      |
+| **触发**     | `GET /briefs?eventId=` 或 `GET /briefs?year=&eventIds=`                                    |
+| **职责**     | 只读查询 `briefs`；组装产品所需字段；**绝不**触发 LLM                                      |
+| **鉴权**     | 单用户阶段：可用安全规则放宽只读 + 不写；或简单 API Key 头。禁止匿名写                     |
 | **响应示例** | `{ eventId, briefs: [ { slot, status, sections, generatedAt, sourceUrls, disclaimer } ] }` |
 
 ### 3.4 `admin-requeue`（可选 · Event，手动）
@@ -234,14 +234,14 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ### 3.5 函数一览
 
-| 函数名 | 模型 | 触发 | 写库 | 调 LLM |
-|--------|------|------|------|--------|
-| `detect-new-materials` | Event | Timer 30min（内部 dense/daily/idle） | jobs, briefs(状态) | 否 |
-| `generate-brief` | Event | invoke 为主 + Timer 扫队列 | jobs, briefs, source_* | **是**（有 job 时） |
-| `get-events` | HTTP | 浏览器/前端 | 否 | 否 |
-| `get-briefs` | HTTP | 浏览器/前端 | 否 | 否 |
-| `trigger-backfill` | HTTP | 前端切历史年（鉴权） | 否（invoke detect） | 否 |
-| `admin-requeue` | Event | 手动 | jobs | 否 |
+| 函数名                 | 模型  | 触发                                 | 写库                   | 调 LLM              |
+| ---------------------- | ----- | ------------------------------------ | ---------------------- | ------------------- |
+| `detect-new-materials` | Event | Timer 30min（内部 dense/daily/idle） | jobs, briefs(状态)     | 否                  |
+| `generate-brief`       | Event | invoke 为主 + Timer 扫队列           | jobs, briefs, source_* | **是**（有 job 时） |
+| `get-events`           | HTTP  | 浏览器/前端                          | 否                     | 否                  |
+| `get-briefs`           | HTTP  | 浏览器/前端                          | 否                     | 否                  |
+| `trigger-backfill`     | HTTP  | 前端切历史年（鉴权）                 | 否（invoke detect）    | 否                  |
+| `admin-requeue`        | Event | 手动                                 | jobs                   | 否                  |
 
 ---
 
@@ -262,10 +262,10 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 **槽位补全：** 前端（或 `get-briefs` 服务端）必须按事件类型展开完整槽位列表，缺行也要出卡：
 
-| 事件 | 必须出现的 slots |
-|------|------------------|
-| earnings | `["earnings"]` |
-| fomc | `["statement","minutes","sep"]` |
+| 事件     | 必须出现的 slots                |
+| -------- | ------------------------------- |
+| earnings | `["earnings"]`                  |
+| fomc     | `["statement","minutes","sep"]` |
 
 **单卡状态合成（优先级从上到下）：**
 
@@ -289,19 +289,19 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ### 4.3 原文抓取优先级（实现备忘）
 
-| 槽位 | 优先源 | 原因 |
-|------|--------|------|
-| earnings | SEC EDGAR 10-Q/10-K 正文（+ 可选 earnings release 若可得） | 可程序化、稳定；IR 留在链接区供人核对（与父 PRD 一致） |
-| statement / minutes / sep | Fed 官方 HTML/PDF URL（时间线已有） | 与方案 B 一致 |
+| 槽位                      | 优先源                                                     | 原因                                                   |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------ |
+| earnings                  | SEC EDGAR 10-Q/10-K 正文（+ 可选 earnings release 若可得） | 可程序化、稳定；IR 留在链接区供人核对（与父 PRD 一致） |
+| statement / minutes / sep | Fed 官方 HTML/PDF URL（时间线已有）                        | 与方案 B 一致                                          |
 
 ### 4.4 Prompt 版本与 `sections[].id`
 
-| promptVersion | 固定 section id（顺序） |
-|---------------|-------------------------|
-| `earnings-std-v1` | `verdict`, `financials`, `yoy_qoq`, `segments`, `management`, `guidance`, `risks` |
-| `fomc-statement-std-v1` | `rate_decision`, `stance`, `economy_risks` |
-| `fomc-minutes-std-v1` | `disagreement`, `policy_path` |
-| `fomc-sep-std-v1` | `dots_path`, `macro_projections` |
+| promptVersion           | 固定 section id（顺序）                                                           |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `earnings-std-v1`       | `verdict`, `financials`, `yoy_qoq`, `segments`, `management`, `guidance`, `risks` |
+| `fomc-statement-std-v1` | `rate_decision`, `stance`, `economy_risks`                                        |
+| `fomc-minutes-std-v1`   | `disagreement`, `policy_path`                                                     |
+| `fomc-sep-std-v1`       | `dots_path`, `macro_projections`                                                  |
 
 块无原文依据时：`body` 写「原文未提及」。输出须为 JSON `sections[]`；解析失败 → job failed 并重试。
 
@@ -309,50 +309,50 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ## 5. AI 调用（CloudBase）
 
-- 运行环境：云函数内 `@cloudbase/node-sdk`（Node）`ai.createModel` + `generateText`  
-- 模型选型：实现阶段按 Token 成本与长文能力定（如 DeepSeek / 混元 instruct）；写入 `briefs.model`  
+- 运行环境：云函数内 `@cloudbase/node-sdk`（Node）`ai.createModel` + `generateText`
+- 模型选型：实现阶段按 Token 成本与长文能力定（如 DeepSeek / 混元 instruct）；写入 `briefs.model`
 - **禁止**在浏览器直连长文原文再调模型作为主路径（密钥、超时、重复计费）
 
 ---
 
 ## 6. 失败、退避与观测
 
-| 策略 | 建议 |
-|------|------|
-| 最大尝试 | 5；耗尽后 `briefs.status = failed_exhausted`，停止自动重试 |
-| 退避 | 1m → 5m → 15m → 1h → 6h（写入 `nextRunAt`） |
-| 部分成功 | FOMC 一卡失败不影响其他卡 |
-| 锁过期 | processing 超过阈值 → 回 queued（§4.1） |
-| 日志 | 云函数日志带 `eventId`、`slot`、`jobId`、`requestId` |
-| 告警（可选） | 连续失败企微 Webhook（非 V2 必做） |
+| 策略         | 建议                                                       |
+| ------------ | ---------------------------------------------------------- |
+| 最大尝试     | 5；耗尽后 `briefs.status = failed_exhausted`，停止自动重试 |
+| 退避         | 1m → 5m → 15m → 1h → 6h（写入 `nextRunAt`）                |
+| 部分成功     | FOMC 一卡失败不影响其他卡                                  |
+| 锁过期       | processing 超过阈值 → 回 queued（§4.1）                    |
+| 日志         | 云函数日志带 `eventId`、`slot`、`jobId`、`requestId`       |
+| 告警（可选） | 连续失败企微 Webhook（非 V2 必做）                         |
 
 ---
 
 ## 7. 安全与配额
 
-- `briefs` / `jobs`：**写仅云函数**；前端只读 `get-briefs`  
-- 环境变量：无把模型密钥打进前端；优先用 CloudBase 内置 AI 额度  
+- `briefs` / `jobs`：**写仅云函数**；前端只读 `get-briefs`
+- 环境变量：无把模型密钥打进前端；优先用 CloudBase 内置 AI 额度
 - Timer 可 30min 唤醒，但 **idle 轮次不打外部源**；外部拉取仅 dense / daily（§3.1.1），避免对 SEC/Fed 过度爬取（遵守 User-Agent 与间隔）
 
 ---
 
 ## 8. 落地顺序（实现阶段，非本文件交付）
 
-1. 建集合 `briefs`、`jobs`（可选 `source_artifacts`）  
-2. 实现 `get-briefs` + 前端接三层只读态（可用 fixture）  
-3. 实现 `generate-brief`（手动塞一条 job 跑通）  
-4. 实现 `detect-new-materials` + Timer  
-5. 接通真实 SEC/Fed 指纹与 prompt  
-6. 观测失败退避一周后再收紧间隔  
-7. ~~（已完成 2026-08-01）~~ 时间线迁入 HTTP `get-events`；前端静态托管 CloudBase；去掉 Vercel 
+1. 建集合 `briefs`、`jobs`（可选 `source_artifacts`）
+2. 实现 `get-briefs` + 前端接三层只读态（可用 fixture）
+3. 实现 `generate-brief`（手动塞一条 job 跑通）
+4. 实现 `detect-new-materials` + Timer
+5. 接通真实 SEC/Fed 指纹与 prompt
+6. 观测失败退避一周后再收紧间隔
+7. ~~（已完成 2026-08-01）~~ 时间线迁入 HTTP `get-events`；前端静态托管 CloudBase；去掉 Vercel
 
 ---
 
 ## 9. 修订记录
 
-| 日期 | 变更 |
-|------|------|
-| 2026-07-30 | 初稿：CloudBase 集合、三函数职责、与 Vercel 时间线边界、幂等与状态映射 |
+| 日期       | 变更                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| 2026-07-30 | 初稿：CloudBase 集合、三函数职责、与 Vercel 时间线边界、幂等与状态映射                        |
 | 2026-07-30 | 审阅修订：状态合并契约、eventId 对齐、失败耗尽态、槽位补全、年份 backfill、section id、锁过期 |
-| 2026-07-31 | **检测节奏改为窗口加密 + 日常兜底**（§3.1.1）；否定全年无差别高频爬取 |
-| 2026-08-01 | **全栈迁 CloudBase**：静态托管前端 + HTTP `get-events`；移除 Vercel 部署边界 |
+| 2026-07-31 | **检测节奏改为窗口加密 + 日常兜底**（§3.1.1）；否定全年无差别高频爬取                         |
+| 2026-08-01 | **全栈迁 CloudBase**：静态托管前端 + HTTP `get-events`；移除 Vercel 部署边界                  |

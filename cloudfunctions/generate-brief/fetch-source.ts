@@ -33,8 +33,8 @@ function htmlToText(html: string): string {
 function truncateForLlm(text: string): string {
   if (text.length <= MAX_CHARS) return text;
   const markers = [
-    /Item\s+7[\.\s–—-]/i,
-    /Item\s+8[\.\s–—-]/i,
+    /Item\s+7[.\s–—-]/i,
+    /Item\s+8[.\s–—-]/i,
     /MANAGEMENT['']S DISCUSSION/i,
     /CONSOLIDATED STATEMENTS OF (INCOME|OPERATIONS)/i,
   ];
@@ -106,7 +106,10 @@ async function resolvePrimaryDocument(
   throw new Error(`primaryDocument not found for accession ${accessionNoDash}`);
 }
 
-async function fetchSecFilingText(eventId: string, sourceUrls: string[]): Promise<{
+async function fetchSecFilingText(
+  eventId: string,
+  sourceUrls: string[],
+): Promise<{
   text: string;
   sourceUrl: string;
 }> {
@@ -114,10 +117,7 @@ async function fetchSecFilingText(eventId: string, sourceUrls: string[]): Promis
   if (!cik || !accessionNoDash) {
     throw new Error("cannot resolve CIK/accession from eventId/sourceUrls");
   }
-  const { primaryDocument, accessionNumber } = await resolvePrimaryDocument(
-    cik,
-    accessionNoDash,
-  );
+  const { primaryDocument, accessionNumber } = await resolvePrimaryDocument(cik, accessionNoDash);
   const cikNum = String(Number(cik));
   const docUrl = `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accessionNoDash}/${primaryDocument}`;
   const html = await fetchText(docUrl);
@@ -135,8 +135,7 @@ async function fetchFedMaterialText(sourceUrls: string[]): Promise<{
   text: string;
   sourceUrl: string;
 }> {
-  const fedUrl =
-    sourceUrls.find((u) => /federalreserve\.gov/i.test(u)) ?? sourceUrls[0];
+  const fedUrl = sourceUrls.find((u) => /federalreserve\.gov/i.test(u)) ?? sourceUrls[0];
   if (!fedUrl) throw new Error("no Fed sourceUrl");
   const html = await fetchText(fedUrl);
   const text = truncateForLlm(htmlToText(html));
