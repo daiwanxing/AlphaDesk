@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { fetchTimeline, requestBriefBackfill } from "@/features/event-track/api";
 import { EventTimeline, StatsBar } from "@/features/event-track/components/EventTimeline";
 import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
-import { MAG7_TICKERS, type TimelineResponse } from "@/features/event-track/types";
+import type { TimelineResponse } from "@contracts/event-track";
+import { MAG7_TICKERS } from "@/features/event-track/types";
 import "@/features/event-track/event-track.scss";
 
 type EventsSearch = {

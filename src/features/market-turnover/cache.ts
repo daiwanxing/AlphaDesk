@@ -1,4 +1,4 @@
-import type { MarketTurnoverResponse, TurnoverPoint } from "./types";
+import type { MarketTurnoverResponse, TurnoverPoint } from "@contracts/market-turnover";
 
 const STORAGE_KEY = "investor:market-turnover:v1";
 

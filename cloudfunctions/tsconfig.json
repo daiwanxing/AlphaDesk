@@ -11,9 +11,12 @@
     "composite": true,
     "verbatimModuleSyntax": false,
     "noEmit": true,
-    "rootDir": ".",
+    "paths": {
+      "@contracts/*": ["./../packages/contracts/*.ts"]
+    },
+    "rootDir": "..",
     "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.cloudfunctions.tsbuildinfo"
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["./get-events/**"]
+  "include": ["./**/*.ts", "../packages/contracts/*.ts"],
+  "exclude": ["./get-events/**", "../packages/contracts/**/*.test.ts"]
 }

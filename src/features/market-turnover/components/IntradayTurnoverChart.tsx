@@ -3,7 +3,7 @@ import { echarts, type EChartsOption } from "@/shared/charts/echarts";
 import { formatAmountYi, formatAmountYuan } from "../format";
 import { TURNOVER_LABELS } from "../labels";
 import { alignSeriesToAxis, buildTradingMinuteLabels } from "../trading-axis";
-import type { TurnoverPoint } from "../types";
+import type { TurnoverPoint } from "@contracts/market-turnover";
 
 type ChartInstance = ReturnType<typeof echarts.init>;
 

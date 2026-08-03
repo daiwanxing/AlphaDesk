@@ -1,4 +1,4 @@
-import { formatDisplayDate } from "../api";
+import { formatDisplayDate } from "../lib/dates";
 import { SLOT_LABEL } from "../labels";
 import type { BriefCard } from "../briefs";
 import type { ProductBriefCardState } from "../types";

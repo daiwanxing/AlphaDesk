@@ -1,6 +1,10 @@
 import type { MarketSession } from "../session";
 
-export type CompareMode = "vs_prev_same_time" | "vs_prev_full_day";
+import type { CompareMode as CompareModeContract } from "@contracts/market-turnover" with {
+  "resolution-mode": "import",
+};
+
+export type CompareMode = CompareModeContract;
 
 export function isSnapshotSession(session: MarketSession): boolean {
   return session === "weekend" || session === "pre_open";

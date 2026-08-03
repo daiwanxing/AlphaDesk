@@ -7,7 +7,7 @@ import {
   writeTurnoverCache,
 } from "./cache";
 import { resolveMarketSession } from "./session";
-import type { MarketSession, MarketTurnoverResponse } from "./types";
+import type { MarketSession, MarketTurnoverResponse } from "@contracts/market-turnover";
 import { cloudbaseApiBase } from "@/shared/config/cloudbase";
 
 const POLL_BASE_MS = 15_000;

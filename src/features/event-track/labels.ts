@@ -1,4 +1,4 @@
-import type { BriefSlot } from "./types";
+import type { BriefSlot } from "@contracts/briefs";
 
 export const SLOT_LABEL: Record<BriefSlot, string> = {
   earnings: "财报",

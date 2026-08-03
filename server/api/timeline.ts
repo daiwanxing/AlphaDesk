@@ -3,44 +3,12 @@ import { getIrUrl } from "../lib/constants.ts";
 import { fetchFomcMeetingsForYear } from "../lib/fed.ts";
 import { fetchMag7UpcomingForYear } from "../lib/nasdaq.ts";
 import { fetchMag7FilingsForYear } from "../lib/sec.ts";
-
-export type EarningsEvent = {
-  kind: "earnings";
-  id: string;
-  ticker: string;
-  companyName: string;
-  reportPeriodLabel: string;
-  reportPeriodEnd?: string;
-  scheduledDate?: string;
-  actualDate?: string;
-  status: "pending" | "disclosed";
-  irUrl?: string;
-  form?: string;
-  cik?: string;
-  accessionNumber?: string;
-  edgarUrl?: string;
-  time?: string;
-  epsForecast?: string;
-  sources: string[];
-};
-
-export type FomcEvent = {
-  kind: "fomc";
-  id: string;
-  meetingLabel: string;
-  meetingEndDate: string;
-  status: "upcoming" | "held";
-  sequenceInYear: number;
-  materials: Array<{
-    label: string;
-    url: string;
-    kind: "statement" | "minutes" | "sep" | "other";
-    published: boolean;
-  }>;
-  sources: string[];
-};
-
-export type TimelineEvent = EarningsEvent | FomcEvent;
+import type {
+  EarningsEvent,
+  FomcEvent,
+  TimelineEvent,
+  TimelineResponse,
+} from "@contracts/event-track";
 
 function fiscalLabel(fiscalQuarterEnding: string): string {
   // "Jun/2026" from Nasdaq
@@ -59,12 +27,7 @@ function reportPeriodLabelFromSec(form: string, reportDate: string): string {
   return `FY${y} Q${q} (${form})`;
 }
 
-export async function buildTimeline(year: number): Promise<{
-  year: number;
-  updatedAt: string;
-  events: TimelineEvent[];
-  meta: { earningsDisclosed: number; earningsPending: number; fomc: number };
-}> {
+export async function buildTimeline(year: number): Promise<TimelineResponse> {
   const cacheKey = `timeline-${year}`;
   const cached = getCached<Awaited<ReturnType<typeof buildTimeline>>>(cacheKey);
   if (cached) return cached;
@@ -167,9 +130,6 @@ export async function buildTimeline(year: number): Promise<{
   return result;
 }
 
-export function findEvent(
-  timeline: Awaited<ReturnType<typeof buildTimeline>>,
-  id: string,
-): TimelineEvent | undefined {
+export function findEvent(timeline: TimelineResponse, id: string): TimelineEvent | undefined {
   return timeline.events.find((e) => e.id === id);
 }

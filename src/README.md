@@ -31,11 +31,15 @@ src/
 
 ```text
 features/<name>/
-  api.ts
+  api/
+    index.ts              # 对外统一导出
+    <module>.ts           # 按业务接口模块拆分
   types.ts
   components/
+    __tests__/            # 组件测试
   hooks/
   lib/
+  __tests__/              # 纯逻辑、Hook 与 feature 级测试
 ```
 
 ## 依赖方向
@@ -78,9 +82,18 @@ features/a  ✗→ features/b 的 components 内部实现
 
 ## 测试
 
-- 纯函数、域逻辑：优先与 feature 同域或 `features/*/lib` 旁测
+- 纯函数、域逻辑、Hook：放在对应 feature 的 `__tests__/`
+- 组件测试：放在对应组件目录的 `components/__tests__/`
 - 路由 / 集成：`src/test/`
 - 组件测试需要 Router 时用 memory history + `RouterProvider`
+
+## Feature API
+
+- 按业务模块放入 `features/<name>/api/<module>.ts`，例如 `event-track/api/events.ts` 与
+  `event-track/api/briefs.ts`
+- `api/index.ts` 只做公开接口与类型的统一 re-export，不在 barrel 中放实现或日期等辅助逻辑
+- 日期、格式化等纯辅助函数放在 feature 的 `lib/` 中；内部模块优先使用相对路径，避免 barrel
+  反向导入形成循环依赖
 
 ## 何时再抽
 

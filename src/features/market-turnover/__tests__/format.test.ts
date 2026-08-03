@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountParts, formatAmountYi, formatAmountYuan } from "./format";
+import { amountParts, formatAmountYi, formatAmountYuan } from "../format";
 
 describe("formatAmountYuan", () => {
   it("formats integer 亿 with grouping", () => {

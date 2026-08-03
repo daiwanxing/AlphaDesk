@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TurnoverBoard } from "./TurnoverBoard";
-import type { MarketTurnoverResponse } from "../types";
+import { TurnoverBoard } from "../TurnoverBoard";
+import type { MarketTurnoverResponse } from "../../types";
 
-vi.mock("./IntradayTurnoverChart", () => ({
+vi.mock("../IntradayTurnoverChart", () => ({
   IntradayTurnoverChart: ({ showPrev }: { showPrev: boolean }) => (
     <div data-testid="turnover-chart" data-show-prev={String(showPrev)} />
   ),

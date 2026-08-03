@@ -3,8 +3,33 @@ import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 
 import { createTurnoverServer } from "./http";
+import type { MarketTurnoverResponse } from "@contracts/market-turnover" with {
+  "resolution-mode": "import",
+};
 
-async function startServer(buildResponse: () => Promise<unknown>) {
+const responseBody: MarketTurnoverResponse = {
+  ok: true,
+  asOf: "2026-08-03T09:30:00+08:00",
+  session: "continuous",
+  compareMode: "vs_prev_same_time",
+  disclaimer: "同时刻累计对比",
+  markets: [],
+  total: {
+    amount: 100,
+    prevFullDayAmount: 90,
+    prevSameTimeAmount: 80,
+    delta: 20,
+    deltaPct: 25,
+  },
+  series: {
+    tradeDate: "2026-08-03",
+    prevTradeDate: "2026-07-31",
+    today: [],
+    prev: [],
+  },
+};
+
+async function startServer(buildResponse: () => Promise<MarketTurnoverResponse>) {
   const server = createTurnoverServer(buildResponse);
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const address = server.address() as AddressInfo;
@@ -16,7 +41,7 @@ async function startServer(buildResponse: () => Promise<unknown>) {
 
 describe("get-market-turnover HTTP boundary", () => {
   it("serves the response builder at the root and function alias", async () => {
-    const body = { ok: true, marker: "contract" };
+    const body = responseBody;
     const { server, url } = await startServer(async () => body);
 
     try {
@@ -57,7 +82,7 @@ describe("get-market-turnover HTTP boundary", () => {
     let calls = 0;
     const { server, url } = await startServer(async () => {
       calls += 1;
-      return { ok: true };
+      return responseBody;
     });
 
     try {

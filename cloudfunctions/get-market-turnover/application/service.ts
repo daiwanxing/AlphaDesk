@@ -18,15 +18,19 @@ import {
   type MinuteAmount,
   type TurnoverPoint,
 } from "../series";
-import { resolveMarketSession, type MarketSession } from "../session";
+import { resolveMarketSession } from "../session";
 import { MARKETS } from "../market-config";
 import {
   compareModeFor,
   disclaimerFor,
   isSnapshotSession,
   klineOnlyDisclaimerFor,
-  type CompareMode,
 } from "../domain/turnover-policy";
+import type {
+  MarketSession,
+  MarketTurnoverMarket,
+  MarketTurnoverResponse,
+} from "@contracts/market-turnover" with { "resolution-mode": "import" };
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -47,43 +51,6 @@ export type TurnoverApplicationDependencies = {
 };
 
 type MarketDaySeries = Map<string, TurnoverPoint[]>;
-
-type MarketTurnoverMarket = {
-  id: "sh" | "sz" | "bj";
-  label: string;
-  source: string;
-  amount: number;
-  prevFullDayAmount: number;
-  delta: number;
-  deltaPct: number;
-};
-
-type MarketTurnoverTotal = {
-  amount: number;
-  prevFullDayAmount: number;
-  prevSameTimeAmount: number;
-  delta: number;
-  deltaPct: number;
-};
-
-type MarketTurnoverSeries = {
-  tradeDate: string;
-  prevTradeDate: string;
-  today: TurnoverPoint[];
-  prev: TurnoverPoint[];
-};
-
-export type MarketTurnoverResponse = {
-  ok: true;
-  asOf: string;
-  session: MarketSession;
-  compareMode: CompareMode;
-  disclaimer: string;
-  markets: MarketTurnoverMarket[];
-  total: MarketTurnoverTotal;
-  series: MarketTurnoverSeries;
-  snapshotTradeDate?: string;
-};
 
 function defaultProvider(): TurnoverDataProvider {
   return {

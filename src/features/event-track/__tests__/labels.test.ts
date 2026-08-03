@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatEarningsTitle, formatFomcTitleFromDate, formatRelativeDay } from "./labels";
+import { formatEarningsTitle, formatFomcTitleFromDate, formatRelativeDay } from "../labels";
 
 describe("formatEarningsTitle", () => {
   it("compacts FY and lifts SEC form to chip", () => {

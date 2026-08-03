@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { deriveHasSep, mergeBriefCards, resolveBriefCardState, slotsForEvent } from "./briefs";
-import type { BriefDoc, EarningsEvent, FomcEvent } from "./types";
+import { deriveHasSep, mergeBriefCards, resolveBriefCardState, slotsForEvent } from "../briefs";
+import type { BriefDoc } from "@contracts/briefs";
+import type { EarningsEvent, FomcEvent } from "@contracts/event-track";
 
 const earningsPending: EarningsEvent = {
   kind: "earnings",

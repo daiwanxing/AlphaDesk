@@ -10,10 +10,14 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
+    "paths": {
+      "@contracts/*": ["../../packages/contracts/*.ts"]
+    },
     "rootDir": "../..",
     "verbatimModuleSyntax": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["./index.ts", "../../server/**/*.ts"]
+  "include": ["./index.ts", "../../server/**/*.ts", "../../packages/contracts/*.ts"],
+  "exclude": ["../../packages/contracts/**/*.test.ts"]
 }

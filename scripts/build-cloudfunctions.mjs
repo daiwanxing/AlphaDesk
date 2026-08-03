@@ -44,6 +44,9 @@ async function buildOne(name) {
     target: "node18",
     format: "cjs",
     packages: "external",
+    alias: {
+      "@contracts": join(root, "packages/contracts"),
+    },
     sourcemap: false,
     logLevel: "info",
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alignSeriesToAxis, buildTradingMinuteLabels } from "./trading-axis";
+import { alignSeriesToAxis, buildTradingMinuteLabels } from "../trading-axis";
 
 /** Morning 09:30–11:30 (121) + afternoon 13:00–15:00 (121), inclusive 1-min steps. */
 const TRADING_MINUTE_COUNT = 242;

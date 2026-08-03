@@ -1,7 +1,10 @@
 import http from "node:http";
 import { URL } from "node:url";
+import type { MarketTurnoverResponse } from "@contracts/market-turnover" with {
+  "resolution-mode": "import",
+};
 
-export type TurnoverResponseBuilder = (now: Date) => Promise<unknown>;
+export type TurnoverResponseBuilder = (now: Date) => Promise<MarketTurnoverResponse>;
 
 function sendJson(res: http.ServerResponse, statusCode: number, data: unknown): void {
   res.writeHead(statusCode, {

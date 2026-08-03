@@ -1,6 +1,10 @@
+import type { MarketId } from "@contracts/market-turnover" with {
+  "resolution-mode": "import",
+};
+
 export type MarketDef = {
   secId: string;
-  id: "sh" | "sz" | "bj";
+  id: MarketId;
   label: string;
   source: string;
 };

@@ -1,4 +1,5 @@
 import { buildTimeline, findEvent } from "./timeline.ts";
+import type { EventDetailResponse, TimelineResponse } from "@contracts/event-track";
 
 const CACHE_CONTROL = "public, s-maxage=1800, stale-while-revalidate=3600";
 
@@ -8,11 +9,14 @@ export function parseYearParam(raw: unknown): number | null {
   return y;
 }
 
-export async function getEventsTimeline(year: number) {
+export async function getEventsTimeline(year: number): Promise<TimelineResponse> {
   return buildTimeline(year);
 }
 
-export async function getEventDetail(year: number, id: string) {
+export async function getEventDetail(
+  year: number,
+  id: string,
+): Promise<EventDetailResponse | null> {
   const timeline = await buildTimeline(year);
   const event = findEvent(timeline, id);
   if (!event) return null;

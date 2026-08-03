@@ -10,6 +10,9 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
+    "paths": {
+      "@contracts/*": ["./packages/contracts/*.ts"]
+    },
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

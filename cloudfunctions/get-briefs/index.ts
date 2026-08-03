@@ -1,6 +1,7 @@
 import http from "node:http";
 import { URL } from "node:url";
 import cloudbase from "@cloudbase/node-sdk";
+import { toBriefsResponse, type BriefPersistenceDoc } from "./response";
 
 const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
@@ -12,11 +13,11 @@ function sendJson(res: http.ServerResponse, statusCode: number, data: unknown): 
   res.end(JSON.stringify(data));
 }
 
-async function queryBriefs(eventId: string) {
+async function queryBriefs(eventId: string): Promise<BriefPersistenceDoc[]> {
   const app = cloudbase.init({ env: ENV_ID });
   const db = app.database();
   const result = await db.collection("briefs").where({ eventId }).get();
-  return result.data ?? [];
+  return (result.data ?? []) as BriefPersistenceDoc[];
 }
 
 const server = http.createServer(async (req, res) => {
@@ -36,8 +37,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      const briefs = await queryBriefs(eventId);
-      sendJson(res, 200, { eventId, briefs });
+      const docs = await queryBriefs(eventId);
+      sendJson(res, 200, toBriefsResponse(eventId, docs));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error("[get-briefs]", message);

@@ -1,4 +1,4 @@
-import type { MarketSession } from "./types";
+import type { MarketSession } from "@contracts/market-turnover";
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
 

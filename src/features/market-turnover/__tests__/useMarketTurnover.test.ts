@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MarketSession, MarketTurnoverResponse } from "./types";
-import { useMarketTurnover } from "./useMarketTurnover";
+import type { MarketSession, MarketTurnoverResponse } from "@contracts/market-turnover";
+import { useMarketTurnover } from "../useMarketTurnover";
 
 const fetchMarketTurnover = vi.hoisted(() => vi.fn());
 const readTurnoverCache = vi.hoisted(() => vi.fn(() => null));
@@ -11,14 +11,14 @@ const writeTurnoverCache = vi.hoisted(() => vi.fn());
 const resolveMarketSession = vi.hoisted(() => vi.fn<() => MarketSession>(() => "closed"));
 const cloudbaseApiBase = vi.hoisted(() => vi.fn(() => "https://example.test"));
 
-vi.mock("./api", () => ({ fetchMarketTurnover }));
-vi.mock("./cache", () => ({
+vi.mock("../api", () => ({ fetchMarketTurnover }));
+vi.mock("../cache", () => ({
   peekTurnoverMemoryCache,
   readTurnoverCache,
   turnoverDataEqual,
   writeTurnoverCache,
 }));
-vi.mock("./session", () => ({ resolveMarketSession }));
+vi.mock("../session", () => ({ resolveMarketSession }));
 vi.mock("@/shared/config/cloudbase", () => ({ cloudbaseApiBase }));
 
 const response: MarketTurnoverResponse = {

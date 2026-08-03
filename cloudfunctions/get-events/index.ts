@@ -6,6 +6,7 @@ import {
   getEventsTimeline,
   parseYearParam,
 } from "../../server/api/routes.ts";
+import type { EventDetailResponse, TimelineResponse } from "@contracts/event-track";
 
 function sendJson(
   res: http.ServerResponse,
@@ -55,7 +56,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      const timeline = await getEventsTimeline(year);
+      const timeline: TimelineResponse = await getEventsTimeline(year);
       sendJson(res, 200, timeline, cache);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -73,7 +74,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      const detail = await getEventDetail(year, id);
+      const detail: EventDetailResponse | null = await getEventDetail(year, id);
       if (!detail) {
         sendJson(res, 404, { error: "Event not found" }, cache);
         return;

@@ -1,6 +1,10 @@
 // keep in sync with src/features/market-turnover/session.ts
 
-export type MarketSession = "pre_open" | "continuous" | "lunch" | "closed" | "weekend";
+import type { MarketSession as MarketSessionContract } from "@contracts/market-turnover" with {
+  "resolution-mode": "import",
+};
+
+export type MarketSession = MarketSessionContract;
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -11,7 +15,7 @@ function shanghaiParts(now: Date): { minutes: number; dayOfWeek: number } {
   return { minutes: hours * 60 + mins, dayOfWeek: shifted.getUTCDay() };
 }
 
-export function resolveMarketSession(now: Date): MarketSession {
+export function resolveMarketSession(now: Date): MarketSessionContract {
   const { minutes, dayOfWeek } = shanghaiParts(now);
 
   if (dayOfWeek === 0 || dayOfWeek === 6) {

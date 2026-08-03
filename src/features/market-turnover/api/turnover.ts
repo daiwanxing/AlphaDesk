@@ -1,4 +1,4 @@
-import type { MarketTurnoverResponse } from "./types";
+import type { MarketTurnoverResponse } from "@contracts/market-turnover";
 import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -17,6 +17,5 @@ export async function fetchMarketTurnover(options?: {
     throw new Error("VITE_CLOUDBASE_API_BASE is not set");
   }
   const res = await fetch(url, { signal: options?.signal });
-  const data = await parseJson<MarketTurnoverResponse>(res);
-  return data;
+  return parseJson<MarketTurnoverResponse>(res);
 }

@@ -1,4 +1,6 @@
-import type { BriefSection, BriefSlot } from "./prompts";
+import type { BriefSection, BriefSlot } from "@contracts/briefs" with {
+  "resolution-mode": "import",
+};
 import { requiredSectionIds } from "./prompts";
 
 const DEEPSEEK_BASE = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";

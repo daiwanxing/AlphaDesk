@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import clsx from "clsx";
 import { useState } from "react";
-import { eventDisplayDate } from "../api";
+import { eventDisplayDate } from "../lib/dates";
 import {
   EARNINGS_STATUS_LABEL,
   EVENT_KIND_LABEL,
@@ -13,7 +13,7 @@ import {
   formatRelativeDay,
   statusTagClass,
 } from "../labels";
-import type { TimelineEvent } from "../types";
+import type { TimelineEvent } from "@contracts/event-track";
 import { fallbackInitials, logoUrlForTicker } from "../logos";
 
 type Props = {

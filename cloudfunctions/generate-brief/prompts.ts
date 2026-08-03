@@ -1,8 +1,12 @@
 /** Prompt 版本与 mock sections；Phase B 用 requiredSectionIds + LLM */
 
-export type BriefSlot = "earnings" | "statement" | "minutes" | "sep";
+import type {
+  BriefSection as BriefSectionContract,
+  BriefSlot as BriefSlotContract,
+} from "@contracts/briefs" with { "resolution-mode": "import" };
 
-export type BriefSection = { id: string; heading: string; body: string };
+export type BriefSlot = BriefSlotContract;
+export type BriefSection = BriefSectionContract;
 
 const DISCLAIMER = "AI 生成 · 非正式官方文件";
 

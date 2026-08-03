@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { fetchBriefs, fetchEventDetail, formatDisplayDate } from "@/features/event-track/api";
+import { fetchBriefs, fetchEventDetail } from "@/features/event-track/api";
+import { formatDisplayDate } from "@/features/event-track/lib/dates";
 import { mergeBriefCards } from "@/features/event-track/briefs";
 import type { BriefCard } from "@/features/event-track/briefs";
 import { AiBriefPanel } from "@/features/event-track/components/AiBriefPanel";
@@ -9,7 +10,8 @@ import {
   FOMC_STATUS_LABEL,
   SLOT_LABEL,
 } from "@/features/event-track/labels";
-import type { BriefDoc, EventDetailResponse } from "@/features/event-track/types";
+import type { BriefDoc } from "@contracts/briefs";
+import type { EventDetailResponse } from "@contracts/event-track";
 import "@/features/event-track/event-track.scss";
 
 type DetailSearch = {

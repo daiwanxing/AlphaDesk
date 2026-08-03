@@ -5,8 +5,8 @@ import {
   readTurnoverCache,
   turnoverDataEqual,
   writeTurnoverCache,
-} from "./cache";
-import type { MarketTurnoverResponse } from "./types";
+} from "../cache";
+import type { MarketTurnoverResponse } from "@contracts/market-turnover";
 
 const sample: MarketTurnoverResponse = {
   ok: true,

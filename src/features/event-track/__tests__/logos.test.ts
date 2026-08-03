@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { logoUrlForTicker, fallbackInitials, THESVG_REF } from "./logos";
+import { fallbackInitials, logoUrlForTicker, THESVG_REF } from "../logos";
 
 describe("logos", () => {
   it("uses colored theSVG CDN for MAG7 (Apple via Wikimedia)", () => {

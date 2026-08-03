@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import type { TimelineEvent } from "../types";
-import { eventDisplayDate } from "../api";
+import type { TimelineEvent } from "@contracts/event-track";
+import { eventDisplayDate } from "../lib/dates";
 import { EventCard } from "./EventCard";
 
 type Props = {

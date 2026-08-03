@@ -1,6 +1,10 @@
 import { TURNOVER_LABELS } from "../labels";
 import { isSnapshotSession } from "../session";
-import type { MarketSession, MarketTurnoverResponse, TurnoverPoint } from "../types";
+import type {
+  MarketSession,
+  MarketTurnoverResponse,
+  TurnoverPoint,
+} from "@contracts/market-turnover";
 import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
 import "../market-turnover.scss";
 import { AmountFlow, DeltaFlow } from "./AmountFlow";
