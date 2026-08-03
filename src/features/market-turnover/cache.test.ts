@@ -114,4 +114,35 @@ describe("turnover cache", () => {
     ).toBe(false);
     expect(turnoverDataEqual(null, sample)).toBe(false);
   });
+
+  it("detects middle-point and semantic metadata changes", () => {
+    expect(
+      turnoverDataEqual(sample, {
+        ...sample,
+        series: {
+          ...sample.series,
+          today: [
+            { t: "09:30", v: 0.1 },
+            { t: "12:00", v: 0.7 },
+            { t: "15:00", v: 1 },
+          ],
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sample, {
+        ...sample,
+        series: {
+          ...sample.series,
+          tradeDate: "2026-08-04",
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sample, {
+        ...sample,
+        disclaimer: "同时刻累计对比",
+      }),
+    ).toBe(false);
+  });
 });

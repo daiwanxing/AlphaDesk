@@ -36,15 +36,16 @@ export function writeTurnoverCache(data: MarketTurnoverResponse): void {
   }
 }
 
-function lastPointEqual(a: TurnoverPoint[] | undefined, b: TurnoverPoint[] | undefined): boolean {
-  const aLast = a?.at(-1);
-  const bLast = b?.at(-1);
-  if (aLast === bLast) return true;
-  if (!aLast || !bLast) return false;
-  return aLast.t === bLast.t && aLast.v === bLast.v;
+function pointsEqual(a: TurnoverPoint[] | undefined, b: TurnoverPoint[] | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every((point, index) => {
+    const other = b[index];
+    return other?.t === point.t && other.v === point.v;
+  });
 }
 
-/** Cheap probe equality — asOf + amounts; avoids full JSON.stringify on every poll. */
+/** Probe equality — compares all semantic fields and sequence points before skipping a render. */
 export function turnoverDataEqual(
   a: MarketTurnoverResponse | null | undefined,
   b: MarketTurnoverResponse | null | undefined,
@@ -55,19 +56,30 @@ export function turnoverDataEqual(
     a.asOf !== b.asOf ||
     a.session !== b.session ||
     a.compareMode !== b.compareMode ||
+    a.disclaimer !== b.disclaimer ||
     a.total.amount !== b.total.amount ||
-    a.total.prevSameTimeAmount !== b.total.prevSameTimeAmount
+    a.total.prevFullDayAmount !== b.total.prevFullDayAmount ||
+    a.total.prevSameTimeAmount !== b.total.prevSameTimeAmount ||
+    a.total.delta !== b.total.delta ||
+    a.total.deltaPct !== b.total.deltaPct ||
+    a.series.tradeDate !== b.series.tradeDate ||
+    a.series.prevTradeDate !== b.series.prevTradeDate ||
+    a.snapshotTradeDate !== b.snapshotTradeDate
   ) {
     return false;
   }
-  if (!lastPointEqual(a.series?.today, b.series?.today)) return false;
-  if (!lastPointEqual(a.series?.prev, b.series?.prev)) return false;
+  if (!pointsEqual(a.series?.today, b.series?.today)) return false;
+  if (!pointsEqual(a.series?.prev, b.series?.prev)) return false;
   if (a.markets.length !== b.markets.length) return false;
   return a.markets.every(
     (m, i) =>
       m.id === b.markets[i]?.id &&
+      m.label === b.markets[i]?.label &&
+      m.source === b.markets[i]?.source &&
       m.amount === b.markets[i]?.amount &&
-      m.delta === b.markets[i]?.delta,
+      m.prevFullDayAmount === b.markets[i]?.prevFullDayAmount &&
+      m.delta === b.markets[i]?.delta &&
+      m.deltaPct === b.markets[i]?.deltaPct,
   );
 }
 

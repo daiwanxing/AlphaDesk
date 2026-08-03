@@ -17,7 +17,7 @@
     "format:check": "oxfmt --check",
     "cf:build": "node scripts/build-cloudfunctions.mjs",
     "cf:clean": "node scripts/build-cloudfunctions.mjs clean",
-    "cf:typecheck": "tsc -p cloudfunctions/tsconfig.json --noEmit",
+    "cf:typecheck": "tsc -p cloudfunctions/tsconfig.json --noEmit && tsc -p cloudfunctions/get-events/tsconfig.json --noEmit",
     "build:cloudbase": "vite build --mode production",
     "deploy:cloudbase": "pnpm build:cloudbase && bash scripts/deploy-cloudbase.sh",
     "prepare": "husky"

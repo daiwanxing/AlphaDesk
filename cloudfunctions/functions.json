@@ -1,0 +1,4 @@
+{
+  "http": ["get-events", "get-briefs", "get-market-turnover", "trigger-backfill"],
+  "event": ["detect-new-materials", "generate-brief"]
+}

@@ -6,24 +6,17 @@
  *   pnpm cf:clean  — 删除生成的 .js
  *   pnpm cf:typecheck
  */
-import { readdirSync, statSync, existsSync, rmSync } from "node:fs";
+import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
+import { functionNames } from "./cloudfunctions-manifest.mjs";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const cfRoot = join(root, "cloudfunctions");
 
 function listFunctionDirs() {
-  return readdirSync(cfRoot).filter((name) => {
-    if (name.startsWith(".") || name.startsWith("_")) return false;
-    const p = join(cfRoot, name);
-    return (
-      statSync(p).isDirectory() &&
-      existsSync(join(p, "package.json")) &&
-      existsSync(join(p, "index.ts"))
-    );
-  });
+  return [...functionNames("http"), ...functionNames("event")];
 }
 
 function cleanFunctionJs(fnDir) {
@@ -35,7 +28,7 @@ function cleanFunctionJs(fnDir) {
 function cleanAll() {
   for (const name of listFunctionDirs()) {
     cleanFunctionJs(join(cfRoot, name));
-    console.log(`[cf:clean] ${name}`);
+    process.stdout.write(`[cf:clean] ${name}\n`);
   }
 }
 
@@ -55,14 +48,14 @@ async function buildOne(name) {
     logLevel: "info",
   });
 
-  console.log(`[cf:build] ${name}: index.ts → index.js (bundled)`);
+  process.stdout.write(`[cf:build] ${name}: index.ts → index.js (bundled)\n`);
 }
 
 async function main() {
   const mode = process.argv[2] === "clean" ? "clean" : "build";
   if (mode === "clean") {
     cleanAll();
-    console.log("[cf:clean] done");
+    process.stdout.write("[cf:clean] done\n");
     return;
   }
 
@@ -74,7 +67,7 @@ async function main() {
   for (const name of dirs) {
     await buildOne(name);
   }
-  console.log(`[cf:build] done (${dirs.length} functions)`);
+  process.stdout.write(`[cf:build] done (${dirs.length} functions)\n`);
 }
 
 main().catch((err) => {

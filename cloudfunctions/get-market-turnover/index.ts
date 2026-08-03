@@ -1,11 +1,8 @@
-import http from "node:http";
-import { URL } from "node:url";
 import cloudbase from "@cloudbase/node-sdk";
 import {
   fetchDailyKlines,
   fetchTencentDayMinuteSeries,
   fetchTrends2,
-  MARKETS,
   type CumulativeMinutePoint,
   type KlineBar,
 } from "./eastmoney";
@@ -21,6 +18,15 @@ import {
   type TurnoverPoint,
 } from "./series";
 import { resolveMarketSession, type MarketSession } from "./session";
+import { createTurnoverServer } from "./http";
+import { MARKETS } from "./market-config";
+import {
+  compareModeFor,
+  disclaimerFor,
+  isSnapshotSession,
+  klineOnlyDisclaimerFor,
+  type CompareMode,
+} from "./domain/turnover-policy";
 
 const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
@@ -44,8 +50,6 @@ type IntradayPrevDoc = {
   points: TurnoverPoint[];
   updatedAt: string;
 };
-
-type CompareMode = "vs_prev_same_time" | "vs_prev_full_day";
 
 /** 单市：交易日 → 该日分钟累计序列 */
 type MarketDaySeries = Map<string, TurnoverPoint[]>;
@@ -86,14 +90,6 @@ type MarketTurnoverResponse = {
   series: MarketTurnoverSeries;
   snapshotTradeDate?: string;
 };
-
-function sendJson(res: http.ServerResponse, statusCode: number, data: unknown): void {
-  // 不设任何 CORS 头，避免与 CloudBase 网关反射 Origin 拼成 "origin,*"
-  res.writeHead(statusCode, {
-    "Content-Type": "application/json; charset=utf-8",
-  });
-  res.end(JSON.stringify(data));
-}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -187,20 +183,6 @@ function isPrevCacheHit(
   // Holiday: weekday-only expectedPrevDate may overshoot; trust today's earlier resolution
   if (metaFreshToday && cached.tradeDate < expectedPrevDate) return true;
   return false;
-}
-
-function isSnapshotSession(session: MarketSession): boolean {
-  return session === "weekend" || session === "pre_open";
-}
-
-function disclaimerFor(compareMode: CompareMode): string {
-  return compareMode === "vs_prev_full_day"
-    ? "暂无对比日分时，KPI 按昨收全天对比"
-    : "同时刻累计对比";
-}
-
-function klineOnlyDisclaimerFor(): string {
-  return "分时暂不可用 · 仅展示全天成交额";
 }
 
 function lastPoint(points: TurnoverPoint[]): TurnoverPoint | undefined {
@@ -469,7 +451,7 @@ async function buildKlineSnapshotResponse(
     todaySeries = [];
     prevSeries = [];
   }
-  const compareMode: CompareMode = hasSnapshotSeries ? "vs_prev_same_time" : "vs_prev_full_day";
+  const compareMode = compareModeFor(hasSnapshotSeries);
   const prevSameTimeAmount = hasSnapshotSeries
     ? (valueAtOrBefore(prevSeries, lastPoint(todaySeries)?.t ?? "15:00") ?? totalPrevFullDay)
     : totalPrevFullDay;
@@ -654,7 +636,7 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     };
   });
 
-  const compareMode: CompareMode = prevSeries.length > 0 ? "vs_prev_same_time" : "vs_prev_full_day";
+  const compareMode = compareModeFor(prevSeries.length > 0);
   const totalAmount = lastToday.v;
   const totalPrevFullDay = markets.reduce((sum, m) => sum + m.prevFullDayAmount, 0);
   const prevSameTimeAmount =
@@ -715,34 +697,5 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
   return response;
 }
 
-const server = http.createServer(async (req, res) => {
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  const url = new URL(req.url || "/", "http://127.0.0.1");
-  const path = url.pathname.replace(/\/$/, "") || "/";
-
-  if (req.method === "GET" && (path === "/" || path === "/get-market-turnover")) {
-    try {
-      const body = await buildResponse(new Date());
-      sendJson(res, 200, body);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error("[get-market-turnover]", message);
-      sendJson(res, 500, { error: message });
-    }
-    return;
-  }
-
-  if (req.method === "GET" && path === "/health") {
-    sendJson(res, 200, { ok: true });
-    return;
-  }
-
-  sendJson(res, 404, { error: "Not Found" });
-});
-
+const server = createTurnoverServer((now) => buildResponse(now));
 server.listen(9000);

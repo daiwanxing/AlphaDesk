@@ -10,8 +10,20 @@ ENV_ID="${TCB_ENV_ID:-trader-d4gl4d7a1cb6baebb}"
 CF_ROOT="$ROOT/cloudfunctions"
 MODE="${1:-all}" # all | hosting | functions
 
-HTTP_FNS=(get-events get-briefs get-market-turnover trigger-backfill)
-EVENT_FNS=(detect-new-materials generate-brief)
+manifest_group() {
+  node "$ROOT/scripts/cloudfunctions-manifest.mjs" "$1"
+}
+
+HTTP_FNS=()
+while IFS= read -r fn; do
+  [[ -n "$fn" ]] && HTTP_FNS+=("$fn")
+done < <(manifest_group http)
+
+EVENT_FNS=()
+while IFS= read -r fn; do
+  [[ -n "$fn" ]] && EVENT_FNS+=("$fn")
+done < <(manifest_group event)
+
 ALL_FNS=("${HTTP_FNS[@]}" "${EVENT_FNS[@]}")
 
 # Prefer zip for small packages (avoids flaky COS upload timeout in CI).
