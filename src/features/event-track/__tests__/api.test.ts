@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchEventDetail, fetchTimeline } from "../api/events";
-import { fetchBriefs } from "../api/briefs";
+import { fetchBriefs, fetchEventDetail, fetchTimeline } from "@/services/event-track";
 
 const cloudbaseUrl = vi.hoisted(() => vi.fn());
 

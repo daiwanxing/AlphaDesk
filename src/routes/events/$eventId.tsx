@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { fetchBriefs, fetchEventDetail } from "@/features/event-track/api";
+import { fetchBriefs, fetchEventDetail } from "@/services/event-track";
 import { formatDisplayDate } from "@/features/event-track/lib/dates";
 import { mergeBriefCards } from "@/features/event-track/briefs";
 import type { BriefCard } from "@/features/event-track/briefs";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchMarketTurnover } from "./api";
+import { fetchMarketTurnover } from "@/services/market-turnover";
 import {
   peekTurnoverMemoryCache,
   readTurnoverCache,

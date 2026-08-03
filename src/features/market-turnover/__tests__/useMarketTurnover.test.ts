@@ -11,7 +11,7 @@ const writeTurnoverCache = vi.hoisted(() => vi.fn());
 const resolveMarketSession = vi.hoisted(() => vi.fn<() => MarketSession>(() => "closed"));
 const cloudbaseApiBase = vi.hoisted(() => vi.fn(() => "https://example.test"));
 
-vi.mock("../api", () => ({ fetchMarketTurnover }));
+vi.mock("@/services/market-turnover", () => ({ fetchMarketTurnover }));
 vi.mock("../cache", () => ({
   peekTurnoverMemoryCache,
   readTurnoverCache,

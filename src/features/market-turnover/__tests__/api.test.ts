@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchMarketTurnover } from "../api/turnover";
+import { fetchMarketTurnover } from "@/services/market-turnover";
 
 const cloudbaseUrl = vi.hoisted(() => vi.fn());
 

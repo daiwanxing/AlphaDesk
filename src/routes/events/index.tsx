@@ -1,6 +1,6 @@
 import { createFileRoute, useElementScrollRestoration } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { fetchTimeline, requestBriefBackfill } from "@/features/event-track/api";
+import { fetchTimeline, requestBriefBackfill } from "@/services/event-track";
 import { EventTimeline, StatsBar } from "@/features/event-track/components/EventTimeline";
 import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
 import type { TimelineResponse } from "@contracts/event-track";
