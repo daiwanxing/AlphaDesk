@@ -123,7 +123,7 @@ function buildKlineUrl(host: string, secId: string, limit: number): string {
   );
 }
 
-function buildTrends2Url(host: string, secId: string, ndays: 1 | 2): string {
+function buildTrends2Url(host: string, secId: string, ndays: 2 | 3): string {
   return (
     `${host}/api/qt/stock/trends2/get?secid=${encodeURIComponent(secId)}` +
     "&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13" +
@@ -305,21 +305,36 @@ export async function fetchTencentDayMinuteSeries(
   return out;
 }
 
-function parseTrends2Body(body: Trends2Body, secId: string): string[] {
+function parseTrends2Body(body: Trends2Body, secId: string, minimumDays: 1 | 2): string[] {
   if (body.rc !== 0 || !body.data?.trends?.length) {
     throw new Error(`trends2 empty or invalid for ${secId}`);
   }
-  return body.data.trends;
+
+  const validLines = body.data.trends.filter((line) => {
+    const parts = line.split(",");
+    const datetime = parts[0]?.trim() ?? "";
+    const amount = Number(parts[6]);
+    return (
+      parts.length >= 7 &&
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(datetime) &&
+      Number.isFinite(amount)
+    );
+  });
+  const days = new Set(validLines.map((line) => line.slice(0, 10)));
+  if (days.size < minimumDays) {
+    throw new Error(`trends2 insufficient trading days for ${secId}: ${days.size}`);
+  }
+  return validLines;
 }
 
-export async function fetchTrends2(secId: string, ndays: 1 | 2): Promise<string[]> {
+export async function fetchTrends2(secId: string, ndays: 2 | 3): Promise<string[]> {
   const errors: string[] = [];
 
   for (const host of TRENDS2_HOSTS) {
     const url = buildTrends2Url(host, secId, ndays);
     try {
       const body = await fetchJson<Trends2Body>(url, "Eastmoney");
-      return parseTrends2Body(body, secId);
+      return parseTrends2Body(body, secId, ndays === 3 ? 2 : 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors.push(message);

@@ -17,6 +17,7 @@ const SESSION_META: Record<MarketSession, { label: string; tagClass: string }> =
 };
 
 const EMPTY_POINTS: TurnoverPoint[] = [];
+const SHANGHAI_TIME_ZONE = "Asia/Shanghai";
 
 type TurnoverBoardProps = {
   data: MarketTurnoverResponse | null;
@@ -38,8 +39,24 @@ function deltaTone(delta: number): string {
   return "od-muted";
 }
 
-function asOfLabel(session: MarketSession): string {
-  return isSnapshotSession(session) || session === "closed" ? "数据时间" : "更新时间";
+function formatAsOf(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: SHANGHAI_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(date)
+      .map(({ type, value: part }) => [type, part]),
+  );
+  return `${parts.year}/${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
 export function TurnoverBoard({ data, session, loading, error, configError }: TurnoverBoardProps) {
@@ -57,7 +74,7 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
           <span className={SESSION_META[session].tagClass}>{SESSION_META[session].label}</span>
           {data && (
             <time className="turnover-board__asof num" dateTime={data.asOf}>
-              {asOfLabel(session)} {new Date(data.asOf).toLocaleString("zh-CN", { hour12: false })}
+              {formatAsOf(data.asOf)}
             </time>
           )}
         </div>
@@ -88,7 +105,7 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
 function TurnoverBody({ data }: { data: MarketTurnoverResponse }) {
   const today = data.series?.today ?? EMPTY_POINTS;
   const prev = data.series?.prev ?? EMPTY_POINTS;
-  const showPrev = data.compareMode === "vs_prev_same_time" && prev.length > 0;
+  const showPrev = prev.length > 0;
 
   return (
     <>

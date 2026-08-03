@@ -6,6 +6,7 @@ import {
   fetchTencentDayMinuteSeries,
   fetchTrends2,
   MARKETS,
+  type CumulativeMinutePoint,
   type KlineBar,
 } from "./eastmoney";
 import {
@@ -192,13 +193,13 @@ function isSnapshotSession(session: MarketSession): boolean {
   return session === "weekend" || session === "pre_open";
 }
 
-function disclaimerFor(_session: MarketSession, compareMode: CompareMode): string {
+function disclaimerFor(compareMode: CompareMode): string {
   return compareMode === "vs_prev_full_day"
     ? "暂无对比日分时，KPI 按昨收全天对比"
     : "同时刻累计对比";
 }
 
-function klineOnlyDisclaimerFor(_session: MarketSession): string {
+function klineOnlyDisclaimerFor(): string {
   return "分时暂不可用 · 仅展示全天成交额";
 }
 
@@ -254,16 +255,14 @@ function mergedSeriesFor(perMarket: MarketDaySeries[], day: string): TurnoverPoi
 /**
  * 东财 trends / 文档缓存都没有对比日分时时：腾讯沪深多日分时 + 北证日 K 终点按进度叠加。
  */
-async function loadPrevSeriesFromTencent(
-  prevTradeDate: string,
+function buildSeriesFromTencent(
+  shByDay: Map<string, CumulativeMinutePoint[]>,
+  szByDay: Map<string, CumulativeMinutePoint[]>,
+  tradeDate: string,
   bjEndpoint: number,
-): Promise<TurnoverPoint[]> {
-  const [shByDay, szByDay] = await Promise.all([
-    fetchTencentDayMinuteSeries("1.000001"),
-    fetchTencentDayMinuteSeries("0.399001"),
-  ]);
-  const sh = shByDay.get(prevTradeDate) ?? [];
-  const sz = szByDay.get(prevTradeDate) ?? [];
+): TurnoverPoint[] {
+  const sh = shByDay.get(tradeDate) ?? [];
+  const sz = szByDay.get(tradeDate) ?? [];
   if (sh.length === 0 || sz.length === 0) return [];
 
   const hs = mergeMarketCumulatives([sh, sz]);
@@ -386,7 +385,13 @@ async function resolvePrevAmounts(
 async function loadKlineSnapshot(
   secId: string,
   todayYmd: string,
-): Promise<{ amount: number; prev: number; tradeDate: string; prevTradeDate: string }> {
+): Promise<{
+  amount: number;
+  prev: number;
+  tradeDate: string;
+  prevTradeDate: string;
+  bars: KlineBar[];
+}> {
   const bars = await fetchDailyKlines(secId, 10);
   const snapshot = pickLatestBarBefore(bars, todayYmd, secId);
   const prevBar = pickLatestBarBefore(bars, snapshot.tradeDate, secId);
@@ -395,12 +400,12 @@ async function loadKlineSnapshot(
     prev: prevBar.amount,
     tradeDate: snapshot.tradeDate,
     prevTradeDate: prevBar.tradeDate,
+    bars,
   };
 }
 
 /**
- * 休市快照兜底：trends2 拿不到任何历史交易日时，用日 K 给出可用的全天口径数据，
- * 而不是让 `/turnover` 直接 500。
+ * 休市快照兜底：trends2 历史覆盖不足时，用日 K 和腾讯分时补出可用的快照曲线。
  */
 async function buildKlineSnapshotResponse(
   now: Date,
@@ -426,25 +431,72 @@ async function buildKlineSnapshotResponse(
   const totalAmount = markets.reduce((sum, m) => sum + m.amount, 0);
   const totalPrevFullDay = markets.reduce((sum, m) => sum + m.prevFullDayAmount, 0);
   const first = snapshots[0]!.snap;
+  const snapshotDates = [first.tradeDate, first.prevTradeDate];
+  const bjSnapshot = snapshots.find(({ market }) => market.id === "bj")!.snap;
+
+  const endpointsByDate = new Map<string, number>();
+  for (const date of snapshotDates) {
+    const bjBar = bjSnapshot.bars.find((bar) => bar.tradeDate === date);
+    if (bjBar) endpointsByDate.set(date, bjBar.amount);
+  }
+
+  let todaySeries: TurnoverPoint[] = [];
+  let prevSeries: TurnoverPoint[] = [];
+  try {
+    const [shByDay, szByDay] = await Promise.all([
+      fetchTencentDayMinuteSeries("1.000001"),
+      fetchTencentDayMinuteSeries("0.399001"),
+    ]);
+    todaySeries = buildSeriesFromTencent(
+      shByDay,
+      szByDay,
+      snapshotDates[0]!,
+      endpointsByDate.get(snapshotDates[0]!) ?? 0,
+    );
+    prevSeries = buildSeriesFromTencent(
+      shByDay,
+      szByDay,
+      snapshotDates[1]!,
+      endpointsByDate.get(snapshotDates[1]!) ?? 0,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[get-market-turnover] snapshot series fallback failed:", message);
+  }
+
+  const hasSnapshotSeries = todaySeries.length > 0 && prevSeries.length > 0;
+  if (!hasSnapshotSeries) {
+    todaySeries = [];
+    prevSeries = [];
+  }
+  const compareMode: CompareMode = hasSnapshotSeries ? "vs_prev_same_time" : "vs_prev_full_day";
+  const prevSameTimeAmount = hasSnapshotSeries
+    ? (valueAtOrBefore(prevSeries, lastPoint(todaySeries)?.t ?? "15:00") ?? totalPrevFullDay)
+    : totalPrevFullDay;
+  const totalDelta = calcDelta(
+    totalAmount,
+    compareMode === "vs_prev_same_time" ? prevSameTimeAmount : totalPrevFullDay,
+  );
 
   return {
     ok: true,
     asOf: asOfForSeries(session, first.tradeDate, "15:00", now),
     session,
-    compareMode: "vs_prev_full_day",
-    disclaimer: klineOnlyDisclaimerFor(session),
+    compareMode,
+    disclaimer: hasSnapshotSeries ? disclaimerFor(compareMode) : klineOnlyDisclaimerFor(),
     markets,
     total: {
       amount: totalAmount,
       prevFullDayAmount: totalPrevFullDay,
-      prevSameTimeAmount: totalPrevFullDay,
-      ...calcDelta(totalAmount, totalPrevFullDay),
+      prevSameTimeAmount,
+      delta: totalDelta.delta,
+      deltaPct: totalDelta.deltaPct,
     },
     series: {
       tradeDate: first.tradeDate,
       prevTradeDate: first.prevTradeDate,
-      today: [],
-      prev: [],
+      today: todaySeries,
+      prev: prevSeries,
     },
     snapshotTradeDate: first.tradeDate,
   };
@@ -490,7 +542,18 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     console.error("[get-market-turnover] cache read failed:", message);
   }
 
-  const trendsByMarket = await Promise.all(MARKETS.map((market) => fetchTrends2(market.secId, 2)));
+  const trendsDays = snapshotMode ? 3 : 2;
+  const trendResults = await Promise.allSettled(
+    MARKETS.map((market) => fetchTrends2(market.secId, trendsDays)),
+  );
+  const trendErrors: string[] = [];
+  const trendsByMarket = trendResults.map((result, index) => {
+    if (result.status === "fulfilled") return result.value;
+    const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    trendErrors.push(`${MARKETS[index]!.secId}: ${message}`);
+    console.error(`[get-market-turnover] trends2 failed for ${MARKETS[index]!.secId}:`, message);
+    return [];
+  });
   const seriesByMarket = trendsByMarket.map(parseMarketTrends);
 
   let availableDays = tradingDaysCoveredByAllMarkets(seriesByMarket);
@@ -498,11 +561,11 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     // 盘前上游可能已带出当日空/竞价点，快照语义只允许历史交易日
     availableDays = availableDays.filter((day) => day < todayYmd);
   }
-  if (availableDays.length === 0) {
-    if (snapshotMode) {
-      return buildKlineSnapshotResponse(now, session);
-    }
-    throw new Error("trends2 returned no trading day covered by all markets");
+  const minimumDays = snapshotMode ? 2 : 1;
+  if (availableDays.length < minimumDays) {
+    if (snapshotMode) return buildKlineSnapshotResponse(now, session);
+    const details = trendErrors.length > 0 ? `: ${trendErrors.join("; ")}` : "";
+    throw new Error(`trends2 returned no trading day covered by all markets${details}`);
   }
 
   const dates =
@@ -555,7 +618,13 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     if (prevSeries.length === 0) {
       try {
         const bjSecId = MARKETS.find((m) => m.id === "bj")!.secId;
-        prevSeries = await loadPrevSeriesFromTencent(
+        const [shByDay, szByDay] = await Promise.all([
+          fetchTencentDayMinuteSeries("1.000001"),
+          fetchTencentDayMinuteSeries("0.399001"),
+        ]);
+        prevSeries = buildSeriesFromTencent(
+          shByDay,
+          szByDay,
           prevTradeDate,
           prevFullDayBySecId[bjSecId] ?? 0,
         );
@@ -622,7 +691,7 @@ async function buildResponse(now: Date): Promise<MarketTurnoverResponse> {
     asOf: asOfForSeries(session, dates.tradeDate, lastToday.t, now),
     session,
     compareMode,
-    disclaimer: disclaimerFor(session, compareMode),
+    disclaimer: disclaimerFor(compareMode),
     markets,
     total: {
       amount: totalAmount,
