@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { amountParts, formatAmountYi, formatAmountYuan } from "../format";
+import {
+  amountParts,
+  formatAmountYi,
+  formatAmountYuan,
+  formatProjectedRangeNums,
+  formatYiGrouped,
+} from "../format";
 
 describe("formatAmountYuan", () => {
   it("formats integer 亿 with grouping", () => {
@@ -27,5 +33,12 @@ describe("formatAmountYi", () => {
     expect(formatAmountYi(700_000_000_000)).toBe("7,000亿");
     expect(formatAmountYi(1_400_000_000_000)).toBe("14,000亿");
     expect(formatAmountYi(2_560_000_000_000)).toBe("25,600亿");
+  });
+});
+
+describe("formatProjectedRangeNums / formatYiGrouped", () => {
+  it("formats scheme-B hero nums without 亿 on the number", () => {
+    expect(formatProjectedRangeNums(1_280_000_000_000, 1_360_000_000_000)).toBe("12,800 – 13,600");
+    expect(formatYiGrouped(1_280_000_000_000)).toBe("12,800");
   });
 });

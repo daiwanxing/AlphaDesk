@@ -47,6 +47,30 @@ const sample: MarketTurnoverResponse = {
   snapshotTradeDate: "2026-08-01",
 };
 
+const sampleInsight: NonNullable<MarketTurnoverResponse["turnoverInsight"]> = {
+  status: "active",
+  paceState: "expanding",
+  effectiveTime: "14:30",
+  paceRatio: 1.12,
+  projectedRange: { low: 0.9, high: 1.1 },
+  actualFullDayAmount: 1,
+  reason: undefined,
+  asOf: "2026-08-01T14:30:00+08:00",
+  baseline: {
+    windowDays: 20,
+    sampleDays: 18,
+    shapeDays: 15,
+    scaleDays: 12,
+    method: "kline_scale_short_shape_v1",
+    quality: "active",
+  },
+};
+
+const sampleWithInsight: MarketTurnoverResponse = {
+  ...sample,
+  turnoverInsight: sampleInsight,
+};
+
 afterEach(() => {
   clearTurnoverCacheForTests();
 });
@@ -142,6 +166,103 @@ describe("turnover cache", () => {
       turnoverDataEqual(sample, {
         ...sample,
         disclaimer: "同时刻累计对比",
+      }),
+    ).toBe(false);
+  });
+
+  it("compares turnoverInsight for probe skip", () => {
+    expect(turnoverDataEqual(sample, sample)).toBe(true);
+    expect(turnoverDataEqual(sampleWithInsight, { ...sampleWithInsight })).toBe(true);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight },
+      }),
+    ).toBe(true);
+    expect(turnoverDataEqual(sample, sampleWithInsight)).toBe(false);
+    expect(turnoverDataEqual(sampleWithInsight, sample)).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, status: "warming_up" },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, paceState: "contracting" },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, effectiveTime: "15:00" },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, paceRatio: 1.05 },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: {
+          ...sampleInsight,
+          projectedRange: { low: 0.85, high: 1.1 },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, actualFullDayAmount: 1.01 },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, asOf: "2026-08-01T14:31:00+08:00" },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: { ...sampleInsight, reason: "stale_profile" },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: {
+          ...sampleInsight,
+          baseline: { ...sampleInsight.baseline!, quality: "mature" },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: {
+          ...sampleInsight,
+          baseline: { ...sampleInsight.baseline!, sampleDays: 17 },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sampleWithInsight,
+        turnoverInsight: {
+          ...sampleInsight,
+          projectedFullDayAmount: 1_300_000_000_000,
+        },
+      }),
+    ).toBe(false);
+    expect(
+      turnoverDataEqual(sampleWithInsight, {
+        ...sample,
+        turnoverInsight: { ...sampleInsight, paceRatio: 1.2 },
       }),
     ).toBe(false);
   });

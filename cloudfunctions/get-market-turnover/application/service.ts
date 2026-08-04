@@ -9,13 +9,11 @@ import type {
 } from "../infrastructure/repository";
 import {
   calcDelta,
-  cumsumMinuteAmounts,
   mergeMarketCumulatives,
-  parseTrendsLine,
+  parseTrendsByDay,
   pickSeriesDates,
   scaleSeriesToEndpoint,
   valueAtOrBefore,
-  type MinuteAmount,
   type TurnoverPoint,
 } from "../series";
 import { resolveMarketSession } from "../session";
@@ -26,6 +24,8 @@ import {
   isSnapshotSession,
   klineOnlyDisclaimerFor,
 } from "../domain/turnover-policy";
+import { computeTurnoverInsight } from "../domain/turnover-insight";
+import { assembleInsightInputs } from "./insight-inputs";
 import type {
   MarketSession,
   MarketTurnoverMarket,
@@ -75,6 +75,13 @@ function shanghaiYmd(now: Date): string {
   const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
   const d = String(shifted.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function shanghaiHHmm(now: Date): string {
+  const shifted = new Date(now.getTime() + SHANGHAI_OFFSET_MS);
+  const h = String(shifted.getUTCHours()).padStart(2, "0");
+  const m = String(shifted.getUTCMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 function shanghaiAsOf(now: Date): string {
@@ -166,29 +173,6 @@ function lastPoint(points: TurnoverPoint[]): TurnoverPoint | undefined {
 function isFullDaySeries(points: TurnoverPoint[]): boolean {
   const last = lastPoint(points);
   return !!last && points.length >= FULL_DAY_MIN_POINTS && last.t >= FULL_DAY_MIN_LAST_TIME;
-}
-
-/** trends2 原始行 → 按交易日分组的分钟累计序列 */
-function parseMarketTrends(lines: string[]): MarketDaySeries {
-  const minutesByDay = new Map<string, MinuteAmount[]>();
-
-  for (const line of lines) {
-    const parsed = parseTrendsLine(line);
-    if (!parsed) continue;
-    const bucket = minutesByDay.get(parsed.day);
-    if (bucket) {
-      bucket.push({ t: parsed.t, amount: parsed.amount });
-    } else {
-      minutesByDay.set(parsed.day, [{ t: parsed.t, amount: parsed.amount }]);
-    }
-  }
-
-  const seriesByDay: MarketDaySeries = new Map();
-  for (const [day, minutes] of minutesByDay) {
-    minutes.sort((a, b) => a.t.localeCompare(b.t));
-    seriesByDay.set(day, cumsumMinuteAmounts(minutes));
-  }
-  return seriesByDay;
 }
 
 /**
@@ -428,6 +412,53 @@ async function resolvePrevFullDayByKline(
   return Object.fromEntries(entries);
 }
 
+/** 收盘且主序列就是今天时，全天额已定；其余状态交给 domain 走预测分支。 */
+function resolveTodayFullDayAmount(
+  session: MarketSession,
+  response: MarketTurnoverResponse,
+  now: Date,
+): number | undefined {
+  if (session !== "closed") return undefined;
+  if (response.series.tradeDate !== shanghaiYmd(now)) return undefined;
+  return response.total.amount;
+}
+
+/**
+ * 附加可选的 `turnoverInsight`。任何失败都只记录日志：
+ * 量能基础数据已经算出来了，不能因为预测挂掉而整个接口 500。
+ */
+async function attachTurnoverInsight(
+  response: MarketTurnoverResponse,
+  now: Date,
+  session: MarketSession,
+  provider: TurnoverDataProvider,
+  repository: TurnoverRepository | null,
+  onError: TurnoverApplicationDependencies["onError"],
+): Promise<void> {
+  try {
+    const inputs = await assembleInsightInputs({
+      tradeDate: response.series.tradeDate,
+      provider,
+      repository,
+      onError,
+    });
+
+    response.turnoverInsight = computeTurnoverInsight({
+      session,
+      asOf: response.asOf,
+      wallClockHHmm: shanghaiHHmm(now),
+      todayPoints: response.series.today,
+      todayFullDayAmount: resolveTodayFullDayAmount(session, response, now),
+      completeProfiles: inputs.completeProfiles,
+      shapeDays: inputs.shapeDays,
+      scaleFullDayAmounts: inputs.scaleFullDayAmounts,
+      now,
+    });
+  } catch (err) {
+    reportError(onError, "turnoverInsight", err);
+  }
+}
+
 export function createTurnoverApplication(dependencies: TurnoverApplicationDependencies): {
   buildResponse(now: Date): Promise<MarketTurnoverResponse>;
 } {
@@ -470,7 +501,7 @@ export function createTurnoverApplication(dependencies: TurnoverApplicationDepen
         dependencies.onError?.(`trends2 failed for ${MARKETS[index]!.secId}`, message);
         return [];
       });
-      const seriesByMarket = trendsByMarket.map(parseMarketTrends);
+      const seriesByMarket: MarketDaySeries[] = trendsByMarket.map(parseTrendsByDay);
 
       let availableDays = tradingDaysCoveredByAllMarkets(seriesByMarket);
       if (snapshotMode) {
@@ -480,7 +511,21 @@ export function createTurnoverApplication(dependencies: TurnoverApplicationDepen
       const minimumDays = snapshotMode ? 2 : 1;
       if (availableDays.length < minimumDays) {
         if (snapshotMode) {
-          return buildKlineSnapshotResponse(now, session, provider, dependencies.onError);
+          const snapshot = await buildKlineSnapshotResponse(
+            now,
+            session,
+            provider,
+            dependencies.onError,
+          );
+          await attachTurnoverInsight(
+            snapshot,
+            now,
+            session,
+            provider,
+            repository,
+            dependencies.onError,
+          );
+          return snapshot;
         }
         const details = trendErrors.length > 0 ? `: ${trendErrors.join("; ")}` : "";
         throw new Error(`trends2 returned no trading day covered by all markets${details}`);
@@ -634,6 +679,15 @@ export function createTurnoverApplication(dependencies: TurnoverApplicationDepen
       if (snapshotMode) {
         response.snapshotTradeDate = dates.tradeDate;
       }
+
+      await attachTurnoverInsight(
+        response,
+        now,
+        session,
+        provider,
+        repository,
+        dependencies.onError,
+      );
 
       return response;
     },

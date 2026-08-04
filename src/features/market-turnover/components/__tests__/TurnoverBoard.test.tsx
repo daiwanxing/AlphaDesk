@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TurnoverBoard } from "../TurnoverBoard";
 import type { MarketTurnoverResponse } from "../../types";
+import type { TurnoverInsight } from "@contracts/market-turnover";
 
 vi.mock("../IntradayTurnoverChart", () => ({
   IntradayTurnoverChart: ({ showPrev }: { showPrev: boolean }) => (
@@ -41,8 +42,23 @@ const snapshot: MarketTurnoverResponse = {
   },
 };
 
+const activeInsight = {
+  status: "active",
+  effectiveTime: "2026-08-04T10:30:00+08:00",
+  asOf: "2026-08-04T10:30:00+08:00",
+  paceState: "contracting",
+  paceRatio: 0.86,
+  projectedRange: { low: 1_280_000_000_000, high: 1_360_000_000_000 },
+  baseline: {
+    windowDays: 20,
+    sampleDays: 18,
+    method: "median_intraday_progress_v1",
+    quality: "active",
+  },
+} satisfies TurnoverInsight;
+
 describe("TurnoverBoard", () => {
-  it("shows only the Shanghai date and minute for the as-of time", () => {
+  it("shows Shanghai date with weekday for the as-of time", () => {
     render(
       <TurnoverBoard
         data={{ ...snapshot, asOf: "2026-08-03T09:46:59+08:00" }}
@@ -54,7 +70,8 @@ describe("TurnoverBoard", () => {
     );
 
     const asOf = document.querySelector(".turnover-board__asof");
-    expect(asOf).toHaveTextContent("2026/08/03 09:46");
+    expect(asOf).toHaveTextContent("2026-08-03 星期一");
+    expect(screen.getByText("开盘中")).toBeInTheDocument();
     expect(asOf).not.toHaveTextContent("更新时间");
   });
 
@@ -70,5 +87,36 @@ describe("TurnoverBoard", () => {
     );
 
     expect(screen.getByTestId("turnover-chart")).toHaveAttribute("data-show-prev", "true");
+  });
+
+  it("does not render insight panel when turnoverInsight is absent", () => {
+    render(
+      <TurnoverBoard
+        data={snapshot}
+        session="continuous"
+        loading={false}
+        error={null}
+        configError={null}
+      />,
+    );
+
+    expect(screen.queryByLabelText("量能节奏")).not.toBeInTheDocument();
+  });
+
+  it("renders insight panel copy when turnoverInsight is present", () => {
+    render(
+      <TurnoverBoard
+        data={{ ...snapshot, turnoverInsight: activeInsight }}
+        session="continuous"
+        loading={false}
+        error={null}
+        configError={null}
+      />,
+    );
+
+    expect(screen.getByLabelText("量能节奏")).toBeInTheDocument();
+    expect(screen.getByText("温和缩量")).toBeInTheDocument();
+    expect(screen.getByText("12,800 – 13,600")).toBeInTheDocument();
+    expect(screen.getByText("86%")).toBeInTheDocument();
   });
 });

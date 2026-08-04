@@ -31,6 +31,29 @@ export function cumsumMinuteAmounts(minutes: MinuteAmount[]): TurnoverPoint[] {
   });
 }
 
+/** trends2 原始行 → 按交易日分组的分钟累计序列 */
+export function parseTrendsByDay(lines: string[]): Map<string, TurnoverPoint[]> {
+  const minutesByDay = new Map<string, MinuteAmount[]>();
+
+  for (const line of lines) {
+    const parsed = parseTrendsLine(line);
+    if (!parsed) continue;
+    const bucket = minutesByDay.get(parsed.day);
+    if (bucket) {
+      bucket.push({ t: parsed.t, amount: parsed.amount });
+    } else {
+      minutesByDay.set(parsed.day, [{ t: parsed.t, amount: parsed.amount }]);
+    }
+  }
+
+  const seriesByDay = new Map<string, TurnoverPoint[]>();
+  for (const [day, minutes] of minutesByDay) {
+    minutes.sort((a, b) => a.t.localeCompare(b.t));
+    seriesByDay.set(day, cumsumMinuteAmounts(minutes));
+  }
+  return seriesByDay;
+}
+
 export function mergeMarketCumulatives(markets: TurnoverPoint[][]): TurnoverPoint[] {
   if (markets.length === 0) return [];
 

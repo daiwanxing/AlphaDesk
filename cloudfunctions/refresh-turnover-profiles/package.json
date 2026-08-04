@@ -1,0 +1,9 @@
+{
+  "name": "refresh-turnover-profiles",
+  "version": "1.0.0",
+  "description": "收盘维护每日 turnover_profile 基线样本",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

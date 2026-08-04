@@ -11,7 +11,7 @@ const AXIS = buildTradingMinuteLabels();
 const AXIS_TICKS = new Set(["09:30", "10:30", "11:30", "14:00", "15:00"]);
 
 const LEGEND_PRIMARY = TURNOVER_LABELS.primary;
-const LEGEND_PREV = TURNOVER_LABELS.secondary;
+const LEGEND_PREV = TURNOVER_LABELS.chartPrev;
 
 type ChartTheme = {
   today: string;

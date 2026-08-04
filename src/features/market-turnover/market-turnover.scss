@@ -66,6 +66,23 @@
   border-radius: var(--radius-panel);
 }
 
+%turnover-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+  color: var(--muted);
+
+  svg {
+    flex-shrink: 0;
+    inline-size: 1em;
+    block-size: 1em;
+  }
+}
+
 .turnover-kpi {
   display: grid;
   gap: var(--space-7);
@@ -132,6 +149,345 @@
   color: inherit;
 }
 
+.turnover-insight {
+  /* 与 KPI od-up / od-down 同源：缩量→market-down，放量→market-up */
+  --pace-vlow: var(--market-down);
+  --pace-low: color-mix(in srgb, var(--market-down) 68%, #6b7280 32%);
+  --pace-mid: #5c636e;
+  --pace-vhigh: var(--market-up);
+  --pace-high: color-mix(in srgb, var(--market-up) 68%, #6b7280 32%);
+  --pace-band-vlow: color-mix(in srgb, var(--market-down) 22%, transparent);
+  --pace-band-low: color-mix(in srgb, var(--market-down) 28%, transparent);
+  --pace-band-mid: rgb(92 99 110 / 0.14);
+  --pace-band-high: color-mix(in srgb, var(--market-up) 28%, transparent);
+  --pace-band-vhigh: color-mix(in srgb, var(--market-up) 36%, transparent);
+  --pace-rail-ink: oklch(0.22 0.01 265 / 0.1);
+  --pace-rail-median: rgb(18 17 17 / 0.28);
+  --pace-marker-ring: rgb(18 17 17 / 0.16);
+
+  @extend %turnover-surface;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  padding: var(--space-10) var(--space-11);
+  min-block-size: 172px;
+  position: relative;
+
+  &--compact {
+    min-block-size: 0;
+  }
+
+  &--final {
+    min-block-size: 120px;
+  }
+
+  &--bootstrap &__rail-track {
+    background: transparent;
+    border-top: 4px solid rgba(18, 17, 17, 0.08);
+    height: 0;
+    top: 25px;
+  }
+
+  &--bootstrap &__rail-band {
+    background: rgb(18 17 17 / 0.06);
+    border: 1px dashed rgb(18 17 17 / 0.18);
+    top: 21px;
+    height: 10px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: 8px;
+  }
+
+  &__head-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  &__module {
+    @extend %turnover-section-title;
+  }
+
+  &__snapshot {
+    flex-shrink: 0;
+  }
+
+  &__status-word {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    white-space: nowrap;
+
+    &.is-vlow {
+      color: var(--pace-vlow);
+      font-weight: 620;
+    }
+
+    &.is-low {
+      color: var(--pace-low);
+      font-weight: 580;
+    }
+
+    &.is-mid {
+      color: var(--fg);
+      font-weight: 550;
+    }
+
+    &.is-high {
+      color: var(--pace-high);
+      font-weight: 580;
+    }
+
+    &.is-vhigh {
+      color: var(--pace-vhigh);
+      font-weight: 620;
+    }
+
+    &.is-neutral {
+      color: var(--fg);
+      font-weight: 600;
+    }
+  }
+
+  &__range {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 11px;
+    min-inline-size: 0;
+  }
+
+  &__range-nums {
+    font-size: 18px;
+    font-weight: 510;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  &__range-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: var(--weight-medium);
+  }
+
+  &__rail-block {
+    margin-top: auto;
+  }
+
+  /* 几何对齐 Open Design .pace-rail：预留 100% 标签高度，轨长≈卡片内容宽 */
+  &__rail {
+    position: relative;
+    height: 38px;
+    margin-bottom: 5px;
+  }
+
+  &__rail-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 23px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--pace-rail-ink);
+    z-index: 0;
+  }
+
+  &__rail-band {
+    position: absolute;
+    top: 21px;
+    height: 8px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 1;
+    transition:
+      left 0.35s ease,
+      width 0.35s ease,
+      background-color 0.35s ease;
+
+    &.is-vlow {
+      background: var(--pace-band-vlow);
+    }
+
+    &.is-low {
+      background: var(--pace-band-low);
+    }
+
+    &.is-mid {
+      background: var(--pace-band-mid);
+    }
+
+    &.is-high {
+      background: var(--pace-band-high);
+    }
+
+    &.is-vhigh {
+      background: var(--pace-band-vhigh);
+    }
+  }
+
+  &__rail-median {
+    position: absolute;
+    top: 16px;
+    width: 1px;
+    height: 18px;
+    background: var(--pace-rail-median);
+    transform: translateX(-0.5px);
+    z-index: 2;
+
+    &::after {
+      content: "100%";
+      position: absolute;
+      top: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__rail-marker {
+    position: absolute;
+    top: 19px;
+    width: 11px;
+    height: 11px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--pace-marker-ring);
+    transform: translateX(-50%);
+    z-index: 3;
+    box-sizing: border-box;
+    transition:
+      left 0.35s ease,
+      top 0.35s ease,
+      width 0.35s ease,
+      height 0.35s ease,
+      background-color 0.35s ease,
+      border-width 0.35s ease,
+      box-shadow 0.35s ease;
+
+    &.is-vlow {
+      width: 9px;
+      height: 9px;
+      top: 20px;
+      background: var(--pace-vlow);
+      border-width: 1.5px;
+    }
+
+    &.is-low {
+      background: var(--pace-low);
+    }
+
+    &.is-mid {
+      width: 10px;
+      height: 10px;
+      top: 20px;
+      background: var(--pace-mid);
+      box-shadow: 0 0 0 1px rgb(18 17 17 / 0.12);
+    }
+
+    &.is-high {
+      background: var(--pace-high);
+    }
+
+    &.is-vhigh {
+      width: 13px;
+      height: 13px;
+      top: 18px;
+      background: var(--pace-vhigh);
+      border-width: 2.5px;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--market-up) 32%, transparent);
+    }
+  }
+
+  &__tooltip {
+    z-index: 40;
+    padding: 3px 6px;
+    border: none;
+    border-radius: 6px;
+    background: #121111;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  &__foot {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 10px;
+    color: var(--muted);
+    background-color: #f1f2f6;
+    border-radius: var(--radius-pill);
+  }
+
+  &__final-num {
+    font-size: 26px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  &__final-unit {
+    margin-inline-start: 4px;
+    font-size: 13px;
+    font-weight: var(--weight-medium);
+    color: var(--muted);
+  }
+
+  &__final-caption {
+    margin: 4px 0 0;
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
+
+  &__compact-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  &__compact-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+  }
+
+  &__compact-status {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--fg);
+  }
+
+  &__compact-detail {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  &__compact-time {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
+
 .turnover-panel {
   @extend %turnover-surface;
   display: flex;
@@ -140,9 +496,7 @@
   padding: var(--space-11) var(--space-11) var(--space-6);
 
   &__title {
-    margin: 0;
-    font-size: var(--text-lg);
-    font-weight: var(--weight-semibold);
+    @extend %turnover-section-title;
   }
 }
 

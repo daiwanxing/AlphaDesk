@@ -17,5 +17,6 @@ export async function fetchMarketTurnover(options?: {
     throw new Error("VITE_CLOUDBASE_API_BASE is not set");
   }
   const res = await fetch(url, { signal: options?.signal });
-  return parseJson<MarketTurnoverResponse>(res);
+  const data = await parseJson<MarketTurnoverResponse>(res);
+  return data;
 }

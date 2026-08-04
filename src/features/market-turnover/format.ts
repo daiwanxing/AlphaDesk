@@ -21,8 +21,18 @@ export function formatAmountYuan(n: number): string {
   return `${YI_FORMAT.format(Math.round(n / YI))}亿`;
 }
 
+/** 仅亿元整数 + 分节，不含「亿」后缀。 */
+export function formatYiGrouped(yuan: number): string {
+  return YI_FORMAT.format(Math.round(yuan / YI));
+}
+
 /** 坐标轴统一「亿」+ 三位分节；0 显示为「0」。 */
 export function formatAmountYi(n: number): string {
   if (n === 0) return "0";
   return formatAmountYuan(n);
+}
+
+/** Scheme B 英雄数字：`12,800 – 13,600`（单位另写）。 */
+export function formatProjectedRangeNums(low: number, high: number): string {
+  return `${formatYiGrouped(low)} – ${formatYiGrouped(high)}`;
 }

@@ -1,4 +1,7 @@
-import { TURNOVER_LABELS } from "../labels";
+import { HandCoins } from "lucide-react";
+
+import { SECTION_TITLE_ICON } from "../icons";
+import { SESSION_META, TURNOVER_LABELS, deltaLabel } from "../labels";
 import { isSnapshotSession } from "../session";
 import type {
   MarketSession,
@@ -9,16 +12,9 @@ import { LoadingOverlay } from "@/shared/components/LoadingOverlay";
 import "../market-turnover.scss";
 import { AmountFlow, DeltaFlow } from "./AmountFlow";
 import { IntradayTurnoverChart } from "./IntradayTurnoverChart";
+import { TurnoverInsightPanel } from "./TurnoverInsightPanel";
 
 const SCOPE = "口径：上证 + 深成指 + 北证50";
-
-const SESSION_META: Record<MarketSession, { label: string; tagClass: string }> = {
-  continuous: { label: "盘中", tagClass: "tag tag--success" },
-  lunch: { label: "午休 · 暂停刷新", tagClass: "tag tag--warn" },
-  closed: { label: "已收盘", tagClass: "tag" },
-  weekend: { label: "周末休市", tagClass: "tag" },
-  pre_open: { label: "未开盘", tagClass: "tag tag--info" },
-};
 
 const EMPTY_POINTS: TurnoverPoint[] = [];
 const SHANGHAI_TIME_ZONE = "Asia/Shanghai";
@@ -53,14 +49,16 @@ function formatAsOf(value: string): string {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
       hourCycle: "h23",
     })
       .formatToParts(date)
       .map(({ type, value: part }) => [type, part]),
   );
-  return `${parts.year}/${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+  const weekday = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: SHANGHAI_TIME_ZONE,
+    weekday: "long",
+  }).format(date);
+  return `${parts.year}-${parts.month}-${parts.day} ${weekday}`;
 }
 
 export function TurnoverBoard({ data, session, loading, error, configError }: TurnoverBoardProps) {
@@ -101,12 +99,12 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
         </div>
       )}
 
-      {data && <TurnoverBody data={data} />}
+      {data && <TurnoverBody data={data} session={session} />}
     </div>
   );
 }
 
-function TurnoverBody({ data }: { data: MarketTurnoverResponse }) {
+function TurnoverBody({ data, session }: { data: MarketTurnoverResponse; session: MarketSession }) {
   const today = data.series?.today ?? EMPTY_POINTS;
   const prev = data.series?.prev ?? EMPTY_POINTS;
   const showPrev = prev.length > 0;
@@ -127,15 +125,20 @@ function TurnoverBody({ data }: { data: MarketTurnoverResponse }) {
           </dd>
         </div>
         <div className="turnover-kpi__card">
-          <dt className="turnover-kpi__label">{TURNOVER_LABELS.delta}</dt>
+          <dt className="turnover-kpi__label">{deltaLabel(data.compareMode)}</dt>
           <dd className={`turnover-kpi__value is-delta ${deltaTone(data.total.delta)}`}>
             <DeltaFlow delta={data.total.delta} pct={data.total.deltaPct} />
           </dd>
         </div>
       </dl>
 
+      <TurnoverInsightPanel insight={data.turnoverInsight} session={session} />
+
       <section className="turnover-panel">
-        <h2 className="turnover-panel__title">市场成交额</h2>
+        <h2 className="turnover-panel__title">
+          <HandCoins {...SECTION_TITLE_ICON} />
+          市场成交额
+        </h2>
         <IntradayTurnoverChart prev={prev} showPrev={showPrev} today={today} />
       </section>
     </>

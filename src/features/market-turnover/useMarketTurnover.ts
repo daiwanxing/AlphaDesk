@@ -50,7 +50,8 @@ export function useMarketTurnover(): UseMarketTurnoverResult {
     : "请在 .env.local 中配置 VITE_CLOUDBASE_API_BASE（本地可用 /cloudbase）";
 
   const applyFetched = useCallback((res: MarketTurnoverResponse) => {
-    if (turnoverDataEqual(dataRef.current, res)) return;
+    const equal = turnoverDataEqual(dataRef.current, res);
+    if (equal) return;
     writeTurnoverCache(res);
     setData(res);
   }, []);
