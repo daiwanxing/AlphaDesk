@@ -1,16 +1,6 @@
-import { useRef } from "react";
 import type { MarketSession, TurnoverInsight } from "@contracts/market-turnover";
-import {
-  FloatingArrow,
-  FloatingPortal,
-  arrow,
-  autoUpdate,
-  flip,
-  offset,
-  shift,
-  useFloating,
-} from "@floating-ui/react";
 import { Gauge } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { formatProjectedRangeNums, formatYiGrouped } from "../format";
 import { SECTION_TITLE_ICON } from "../icons";
@@ -19,14 +9,12 @@ import {
   PACE_RAIL_MEDIAN_LEFT_PCT,
   hhmmFromEffectiveTime,
   insightPanelCopy,
-  paceRailBand,
   paceRailLeftPercent,
   type InsightPanelCopyActive,
 } from "../insight-labels";
 
-const TOOLTIP_BG = "#121111";
-const ARROW_HEIGHT = 7;
-const ARROW_GAP = 3;
+const MARKER_RING_SHADOW = "0 0 0 1.5px var(--marker-ink)";
+const MARKER_PULSE_IN = "color-mix(in srgb, var(--marker-ink) 50%, transparent)";
 
 function InsightModuleTitle({ as = "h2" }: { as?: "h2" | "span" }) {
   const Tag = as;
@@ -88,58 +76,42 @@ function rangeHero(insight: TurnoverInsight): { nums: string; unit: string } | n
 function PaceRail({ copy }: { copy: InsightPanelCopyActive }) {
   const tone = `is-${copy.paceTone}`;
   const markerLeft = paceRailLeftPercent(copy.paceRatio);
-  const band = paceRailBand(copy.paceRatio);
-  const arrowRef = useRef<SVGSVGElement>(null);
-
-  const { refs, floatingStyles, context } = useFloating({
-    open: true,
-    placement: "top",
-    whileElementsMounted: autoUpdate,
-    middleware: [
-      offset(ARROW_HEIGHT + ARROW_GAP),
-      flip({ padding: 8 }),
-      shift({ padding: 8 }),
-      arrow({ element: arrowRef }),
-    ],
-  });
+  const reduceMotion = useReducedMotion() ?? false;
+  const pulse = reduceMotion
+    ? undefined
+    : {
+        animate: {
+          boxShadow: [
+            `${MARKER_RING_SHADOW}, 0 0 0 0px ${MARKER_PULSE_IN}`,
+            `${MARKER_RING_SHADOW}, 0 0 0 8px transparent`,
+          ],
+        },
+        transition: { duration: 2.8, ease: "easeOut" as const, repeat: Infinity },
+      };
 
   return (
     <div className="turnover-insight__rail-block">
       <div className="turnover-insight__rail">
         <div className="turnover-insight__rail-track" aria-hidden="true" />
         <div
-          className={`turnover-insight__rail-band ${tone}`}
-          style={{ left: `${band.left}%`, width: `${band.width}%` }}
-          aria-hidden="true"
-        />
-        <div
           className="turnover-insight__rail-median"
           style={{ left: `${PACE_RAIL_MEDIAN_LEFT_PCT}%` }}
           aria-hidden="true"
         />
-        <div
+        <motion.div
           className={`turnover-insight__rail-marker ${tone}`}
-          style={{ left: `${markerLeft}%` }}
-          ref={refs.setReference}
+          style={{ left: `${markerLeft}%`, x: "-50%", y: "-50%" }}
           aria-hidden="true"
+          animate={pulse?.animate ?? false}
+          transition={pulse?.transition}
         />
-        <FloatingPortal>
-          <div
-            ref={refs.setFloating}
-            role="tooltip"
-            className="turnover-insight__tooltip"
-            style={floatingStyles}
-          >
-            <span className="num">{copy.paceRatioText}</span>
-            <FloatingArrow
-              ref={arrowRef}
-              context={context}
-              width={12}
-              height={ARROW_HEIGHT}
-              fill={TOOLTIP_BG}
-            />
-          </div>
-        </FloatingPortal>
+        <span
+          role="tooltip"
+          className="turnover-insight__tooltip"
+          style={{ left: `${markerLeft}%` }}
+        >
+          <span className="num">{copy.paceRatioText}</span>
+        </span>
       </div>
       {copy.foot ? <div className="turnover-insight__foot">{copy.foot}</div> : null}
     </div>

@@ -156,14 +156,8 @@
   --pace-mid: #5c636e;
   --pace-vhigh: var(--market-up);
   --pace-high: color-mix(in srgb, var(--market-up) 68%, #6b7280 32%);
-  --pace-band-vlow: color-mix(in srgb, var(--market-down) 22%, transparent);
-  --pace-band-low: color-mix(in srgb, var(--market-down) 28%, transparent);
-  --pace-band-mid: rgb(92 99 110 / 0.14);
-  --pace-band-high: color-mix(in srgb, var(--market-up) 28%, transparent);
-  --pace-band-vhigh: color-mix(in srgb, var(--market-up) 36%, transparent);
   --pace-rail-ink: oklch(0.22 0.01 265 / 0.1);
-  --pace-rail-median: rgb(18 17 17 / 0.28);
-  --pace-marker-ring: rgb(18 17 17 / 0.16);
+  --pace-rail-median: #121111;
 
   @extend %turnover-surface;
   display: flex;
@@ -186,13 +180,6 @@
     border-top: 4px solid rgba(18, 17, 17, 0.08);
     height: 0;
     top: 25px;
-  }
-
-  &--bootstrap &__rail-band {
-    background: rgb(18 17 17 / 0.06);
-    border: 1px dashed rgb(18 17 17 / 0.18);
-    top: 21px;
-    height: 10px;
   }
 
   &__head {
@@ -283,7 +270,7 @@
     margin-top: auto;
   }
 
-  /* 几何对齐 Open Design .pace-rail：预留 100% 标签高度，轨长≈卡片内容宽 */
+  /* 轨高预留给顶部百分比标签；轨长≈卡片内容宽 */
   &__rail {
     position: relative;
     height: 38px;
@@ -301,119 +288,72 @@
     z-index: 0;
   }
 
-  &__rail-band {
-    position: absolute;
-    top: 21px;
-    height: 8px;
-    border-radius: 999px;
-    pointer-events: none;
-    z-index: 1;
-    transition:
-      left 0.35s ease,
-      width 0.35s ease,
-      background-color 0.35s ease;
-
-    &.is-vlow {
-      background: var(--pace-band-vlow);
-    }
-
-    &.is-low {
-      background: var(--pace-band-low);
-    }
-
-    &.is-mid {
-      background: var(--pace-band-mid);
-    }
-
-    &.is-high {
-      background: var(--pace-band-high);
-    }
-
-    &.is-vhigh {
-      background: var(--pace-band-vhigh);
-    }
-  }
-
   &__rail-median {
     position: absolute;
     top: 16px;
-    width: 1px;
+    width: 3px;
     height: 18px;
     background: var(--pace-rail-median);
     transform: translateX(-0.5px);
     z-index: 2;
-
-    &::after {
-      content: "100%";
-      position: absolute;
-      top: -11px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 8px;
-      color: var(--muted);
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
   }
 
   &__rail-marker {
+    /* 圆心对齐轨心（top 23 + 4/2）；x/y -50% 由 Motion 负责 */
+    --marker-ink: var(--pace-mid);
     position: absolute;
-    top: 19px;
+    top: 25px;
     width: 11px;
     height: 11px;
-    aspect-ratio: 1;
     border-radius: 50%;
+    /* surface 空隙：色芯与涨跌色外圈之间的灰/白隔层，勿删 */
     border: 2px solid var(--surface);
-    box-shadow: 0 0 0 1px var(--pace-marker-ring);
-    transform: translateX(-50%);
+    background: var(--marker-ink);
+    box-shadow: 0 0 0 1.5px var(--marker-ink);
     z-index: 3;
     box-sizing: border-box;
     transition:
       left 0.35s ease,
-      top 0.35s ease,
       width 0.35s ease,
       height 0.35s ease,
       background-color 0.35s ease,
-      border-width 0.35s ease,
-      box-shadow 0.35s ease;
+      border-width 0.35s ease;
 
     &.is-vlow {
+      --marker-ink: var(--pace-vlow);
       width: 9px;
       height: 9px;
-      top: 20px;
-      background: var(--pace-vlow);
       border-width: 1.5px;
     }
 
     &.is-low {
-      background: var(--pace-low);
+      --marker-ink: var(--pace-low);
     }
 
     &.is-mid {
+      --marker-ink: var(--pace-mid);
       width: 10px;
       height: 10px;
-      top: 20px;
-      background: var(--pace-mid);
-      box-shadow: 0 0 0 1px rgb(18 17 17 / 0.12);
     }
 
     &.is-high {
-      background: var(--pace-high);
+      --marker-ink: var(--pace-high);
     }
 
     &.is-vhigh {
+      --marker-ink: var(--pace-vhigh);
       width: 13px;
       height: 13px;
-      top: 18px;
-      background: var(--pace-vhigh);
       border-width: 2.5px;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--market-up) 32%, transparent);
     }
   }
 
+  /* Anchored inside .turnover-insight rail — not portaled to body */
   &__tooltip {
-    z-index: 40;
+    position: absolute;
+    top: -12px;
+    z-index: 4;
+    transform: translateX(-50%);
     padding: 3px 6px;
     border: none;
     border-radius: 6px;
@@ -425,6 +365,18 @@
     letter-spacing: 0.01em;
     white-space: nowrap;
     pointer-events: none;
+    transition: left 0.35s ease;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #121111;
+      border-bottom-width: 0;
+    }
   }
 
   &__foot {

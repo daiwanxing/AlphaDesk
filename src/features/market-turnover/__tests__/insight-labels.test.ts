@@ -4,7 +4,6 @@ import type { TurnoverInsight } from "@contracts/market-turnover";
 import {
   PACE_RAIL_MEDIAN_LEFT_PCT,
   insightPanelCopy,
-  paceRailBand,
   paceRailLeftPercent,
 } from "../insight-labels";
 
@@ -209,11 +208,5 @@ describe("pace rail geometry", () => {
     expect(paceRailLeftPercent(1)).toBeCloseTo((100 / 150) * 100);
     expect(paceRailLeftPercent(0.86)).toBeCloseTo((86 / 150) * 100);
     expect(paceRailLeftPercent(1.5)).toBe(100);
-  });
-
-  it("builds a soft band around the marker", () => {
-    const band = paceRailBand(0.86, 7);
-    expect(band.left).toBeCloseTo((79 / 150) * 100);
-    expect(band.width).toBeCloseTo((14 / 150) * 100);
   });
 });

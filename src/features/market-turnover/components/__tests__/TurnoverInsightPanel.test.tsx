@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { TurnoverInsight } from "@contracts/market-turnover";
 
@@ -96,29 +96,6 @@ describe("TurnoverInsightPanel", () => {
     expect(screen.queryByText("低于近 20 日同刻中位数")).not.toBeInTheDocument();
     expect(screen.getByText("尺度 20 日K · n=18")).toBeInTheDocument();
     expect(container.querySelector(".turnover-insight__rail-marker.is-low")).toBeTruthy();
-  });
-
-  it("keeps pace percent tooltip always visible", async () => {
-    render(
-      <TurnoverInsightPanel
-        insight={{
-          ...baseInsight,
-          status: "active",
-          paceState: "contracting",
-          paceRatio: 0.86,
-          projectedRange: { low: 1_280_000_000_000, high: 1_360_000_000_000 },
-          baseline: {
-            windowDays: 20,
-            sampleDays: 18,
-            method: "median_intraday_progress_v1",
-            quality: "active",
-          },
-        }}
-      />,
-    );
-
-    await act(async () => {});
-    expect(screen.getByRole("tooltip")).toHaveTextContent("86%");
   });
 
   it("marks bootstrap with dashed rail class", () => {

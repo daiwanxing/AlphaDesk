@@ -195,18 +195,3 @@ export function paceRailLeftPercent(paceRatio: number, railMax = 150): number {
   const pct = Math.max(0, Math.min(railMax, paceRatio * 100));
   return (pct / railMax) * 100;
 }
-
-/** Soft band around current pace for visual weight (no API band yet). */
-export function paceRailBand(
-  paceRatio: number,
-  halfWidth = 7,
-  railMax = 150,
-): { left: number; width: number } {
-  const center = Math.max(0, Math.min(railMax, paceRatio * 100));
-  const lo = Math.max(0, center - halfWidth);
-  const hi = Math.min(railMax, center + halfWidth);
-  return {
-    left: (lo / railMax) * 100,
-    width: Math.max(((hi - lo) / railMax) * 100, 4),
-  };
-}
