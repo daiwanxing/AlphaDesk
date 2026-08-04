@@ -196,7 +196,6 @@ describe("insightPanelCopy", () => {
     ).toEqual({
       status: "final",
       statusWord: "收盘",
-      caption: "全天实际成交额 · 无轨 · 无五档染色",
       foot: "截至 10:30 · 实际单点",
     });
   });

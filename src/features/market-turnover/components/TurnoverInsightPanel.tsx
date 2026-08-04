@@ -154,14 +154,13 @@ export function TurnoverInsightPanel({ insight, session }: TurnoverInsightPanelP
           <InsightModuleTitle />
           <p className="turnover-insight__status-word is-neutral">{copy.statusWord}</p>
         </div>
-        <div className="turnover-insight__final-hero">
+        <div className="turnover-insight__final-body">
           <span className="turnover-insight__final-num num">
             {formatYiGrouped(insight.actualFullDayAmount ?? 0)}
             <span className="turnover-insight__final-unit">亿</span>
           </span>
-          <p className="turnover-insight__final-caption">{copy.caption}</p>
+          {copy.foot ? <div className="turnover-insight__foot">{copy.foot}</div> : null}
         </div>
-        {copy.foot ? <div className="turnover-insight__foot">{copy.foot}</div> : null}
       </section>
     );
   }

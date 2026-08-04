@@ -173,6 +173,11 @@
 
   &--final {
     min-block-size: 120px;
+
+    .turnover-insight__foot {
+      color: #fff;
+      background-color: var(--fg);
+    }
   }
 
   &--bootstrap &__rail-track {
@@ -388,6 +393,13 @@
     border-radius: var(--radius-pill);
   }
 
+  &__final-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-5);
+  }
+
   &__final-num {
     font-size: 26px;
     font-weight: var(--weight-semibold);
@@ -399,12 +411,6 @@
     margin-inline-start: 4px;
     font-size: 13px;
     font-weight: var(--weight-medium);
-    color: var(--muted);
-  }
-
-  &__final-caption {
-    margin: 4px 0 0;
-    font-size: var(--text-sm);
     color: var(--muted);
   }
 

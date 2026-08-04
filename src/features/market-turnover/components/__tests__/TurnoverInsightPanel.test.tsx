@@ -136,7 +136,7 @@ describe("TurnoverInsightPanel", () => {
 
     expect(screen.getByText("收盘")).toBeInTheDocument();
     expect(screen.getByText("25,600")).toBeInTheDocument();
-    expect(screen.getByText("全天实际成交额 · 无轨 · 无五档染色")).toBeInTheDocument();
+    expect(screen.getByText("截至 10:30 · 实际单点")).toBeInTheDocument();
     expect(container.querySelector(".turnover-insight__rail")).toBeNull();
   });
 

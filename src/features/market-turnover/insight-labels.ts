@@ -66,7 +66,6 @@ export type InsightPanelCopyUnavailable = {
 export type InsightPanelCopyFinal = {
   status: "final";
   statusWord: string;
-  caption: string;
   foot: string;
 };
 
@@ -169,7 +168,6 @@ function finalCopy(insight: TurnoverInsight): InsightPanelCopyFinal {
   return {
     status: "final",
     statusWord: "收盘",
-    caption: "全天实际成交额 · 无轨 · 无五档染色",
     foot: `${formatTimeLabel(insight.effectiveTime)} · 实际单点`,
   };
 }
