@@ -14,6 +14,7 @@ import type { TurnoverDataProvider } from "./service";
 /** 目标展示窗口；profile 保留更长历史以便补缺（规格 §3.5）。 */
 const WINDOW_DAYS = 20;
 const PROFILE_LIST_LIMIT = 60;
+const PROFILE_LIST_TTL_MS = 2 * 60 * 1000;
 /** 与 domain 的 PROFILE_MIN_SAMPLES 对齐：够了就不必再为 bootstrap 拉数。 */
 const PROFILE_MODE_MIN_SAMPLES = 10;
 const SHAPE_MIN_DAYS = 2;
@@ -31,6 +32,8 @@ export type AssembleInsightInputsArgs = {
   tradeDate: string;
   provider: TurnoverDataProvider;
   repository: TurnoverRepository | null;
+  /** 本请求已解析的三市 trends（按 MARKETS 顺序）；有则优先抽形状日。 */
+  seriesByMarket?: Map<string, TurnoverPoint[]>[];
   onError?: (scope: string, message: string) => void;
 };
 
@@ -39,6 +42,13 @@ const EMPTY: InsightInputs = {
   shapeDays: [],
   scaleFullDayAmounts: [],
 };
+
+let profileListCache: { at: number; docs: TurnoverProfileDoc[] } | null = null;
+
+/** 单测重置进程内 profile list 缓存。 */
+export function __resetProfileListCacheForTests(): void {
+  profileListCache = null;
+}
 
 function isPositiveFinite(value: number | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
@@ -56,10 +66,20 @@ function profileToDaySeries(doc: TurnoverProfileDoc): InsightDaySeries {
   };
 }
 
+async function listProfilesCached(repository: TurnoverRepository): Promise<TurnoverProfileDoc[]> {
+  const now = Date.now();
+  if (profileListCache && now - profileListCache.at < PROFILE_LIST_TTL_MS) {
+    return profileListCache.docs;
+  }
+  const docs = await repository.listTurnoverProfiles(PROFILE_LIST_LIMIT);
+  profileListCache = { at: now, docs };
+  return docs;
+}
+
 async function loadCompleteProfiles(args: AssembleInsightInputsArgs): Promise<InsightDaySeries[]> {
   if (!args.repository) return [];
   try {
-    const docs = await args.repository.listTurnoverProfiles(PROFILE_LIST_LIMIT);
+    const docs = await listProfilesCached(args.repository);
     return docs
       .filter((doc) => doc?.quality?.status === "complete" && doc.tradeDate < args.tradeDate)
       .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate))
@@ -108,18 +128,15 @@ function scaleAmountsFrom(totalByDate: Map<string, number>): number[] {
     .map(([, amount]) => amount);
 }
 
-/** 东财 trends2 近几日：三市都覆盖且日 K 能给出 F_s 的历史日才算有效形状日。 */
-async function shapeDaysFromTrends(
-  args: AssembleInsightInputsArgs,
+function shapeDaysFromMarketMaps(
+  byMarket: Map<string, TurnoverPoint[]>[],
+  tradeDate: string,
   totalByDate: Map<string, number>,
-): Promise<InsightDaySeries[]> {
-  const trends = await Promise.all(
-    MARKETS.map((market) => args.provider.fetchTrends2(market.secId, SHAPE_TRENDS_DAYS)),
-  );
-  const byMarket = trends.map(parseTrendsByDay);
+): InsightDaySeries[] {
+  if (byMarket.length === 0 || !byMarket[0]) return [];
 
-  const days = [...byMarket[0]!.keys()]
-    .filter((day) => day < args.tradeDate && byMarket.every((market) => market.has(day)))
+  const days = [...byMarket[0].keys()]
+    .filter((day) => day < tradeDate && byMarket.every((market) => market.has(day)))
     .sort((a, b) => a.localeCompare(b));
 
   const shapeDays: InsightDaySeries[] = [];
@@ -131,6 +148,26 @@ async function shapeDaysFromTrends(
     shapeDays.push({ tradeDate: day, points, fullDayAmount });
   }
   return shapeDays;
+}
+
+/** 复用本请求已解析的三市分时。 */
+function shapeDaysFromSeriesByMarket(
+  seriesByMarket: Map<string, TurnoverPoint[]>[],
+  tradeDate: string,
+  totalByDate: Map<string, number>,
+): InsightDaySeries[] {
+  return shapeDaysFromMarketMaps(seriesByMarket, tradeDate, totalByDate);
+}
+
+/** 东财 trends2 近几日：三市都覆盖且日 K 能给出 F_s 的历史日才算有效形状日。 */
+async function shapeDaysFromTrends(
+  args: AssembleInsightInputsArgs,
+  totalByDate: Map<string, number>,
+): Promise<InsightDaySeries[]> {
+  const trends = await Promise.all(
+    MARKETS.map((market) => args.provider.fetchTrends2(market.secId, SHAPE_TRENDS_DAYS)),
+  );
+  return shapeDaysFromMarketMaps(trends.map(parseTrendsByDay), args.tradeDate, totalByDate);
 }
 
 /** 腾讯沪深多日分时兜底；北证无额字段，按日 K 终点比例叠加（不改变进度形状）。 */
@@ -198,6 +235,12 @@ export async function assembleInsightInputs(
   }
 
   let shapeDays = completeProfiles;
+  if (shapeDays.length < SHAPE_MIN_DAYS && args.seriesByMarket?.length) {
+    shapeDays = mergeShapeDays(
+      shapeDays,
+      shapeDaysFromSeriesByMarket(args.seriesByMarket, args.tradeDate, scale.totalByDate),
+    );
+  }
   if (shapeDays.length < SHAPE_MIN_DAYS) {
     try {
       shapeDays = mergeShapeDays(shapeDays, await shapeDaysFromTrends(args, scale.totalByDate));

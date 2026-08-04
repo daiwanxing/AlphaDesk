@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTurnoverApplication, type TurnoverDataProvider } from "./service";
+import {
+  createTurnoverApplication,
+  memoizeTurnoverProvider,
+  type TurnoverDataProvider,
+} from "./service";
 import type { TurnoverProfileDoc } from "../domain/turnover-profile";
 import type { TurnoverRepository } from "../infrastructure/repository";
+import { __resetProfileListCacheForTests } from "./insight-inputs";
 
 const insightControl = vi.hoisted(() => ({ shouldThrow: false }));
 
@@ -342,6 +347,7 @@ describe("market turnover turnoverInsight assembly", () => {
 
   beforeEach(() => {
     insightControl.shouldThrow = false;
+    __resetProfileListCacheForTests();
   });
 
   it("uses the profile baseline once at least ten complete profiles exist", async () => {
@@ -490,5 +496,75 @@ describe("market turnover turnoverInsight assembly", () => {
       effectiveTime: "15:00",
       actualFullDayAmount: FULL_DAY_TOTAL,
     });
+  });
+
+  it("binds asOf to the last series minute across continuous polls", async () => {
+    const application = createTurnoverApplication({
+      provider: createInsightProvider({
+        days: intradayDays,
+        klineDates: HISTORY_DATES.concat("2026-07-31"),
+      }),
+      repository: () => createRepository(),
+    });
+
+    const first = await application.buildResponse(at1030);
+    const second = await application.buildResponse(new Date("2026-08-03T02:30:45.000Z"));
+
+    expect(first.asOf).toBe("2026-08-03T10:29:00+08:00");
+    expect(second.asOf).toBe(first.asOf);
+    expect(first.turnoverInsight?.asOf).toBe(first.asOf);
+  });
+});
+
+describe("memoizeTurnoverProvider", () => {
+  it("fetches klines once when a larger limit supersedes a smaller one", async () => {
+    const fetchDailyKlines = vi.fn(async (_secId: string, limit = 10) =>
+      Array.from({ length: limit }, (_, i) => ({
+        tradeDate: `2026-07-${String(i + 1).padStart(2, "0")}`,
+        amount: 1,
+      })),
+    );
+    const provider = memoizeTurnoverProvider({
+      async fetchTrends2() {
+        return [];
+      },
+      fetchDailyKlines,
+      async fetchTencentDayMinuteSeries() {
+        return new Map();
+      },
+    });
+
+    const first = await provider.fetchDailyKlines("1.000001", 10);
+    const second = await provider.fetchDailyKlines("1.000001", 25);
+
+    expect(fetchDailyKlines).toHaveBeenCalledTimes(2);
+    expect(fetchDailyKlines).toHaveBeenNthCalledWith(1, "1.000001", 10);
+    expect(fetchDailyKlines).toHaveBeenNthCalledWith(2, "1.000001", 25);
+    expect(first).toHaveLength(10);
+    expect(second).toHaveLength(25);
+
+    const third = await provider.fetchDailyKlines("1.000001", 10);
+    expect(fetchDailyKlines).toHaveBeenCalledTimes(2);
+    expect(third).toHaveLength(10);
+    expect(third[0]?.tradeDate).toBe("2026-07-16");
+  });
+
+  it("reuses trends2 lines when a larger ndays was already fetched", async () => {
+    const fetchTrends2 = vi.fn(async (_secId: string, ndays: 2 | 3) => [`ndays=${ndays}`]);
+    const provider = memoizeTurnoverProvider({
+      fetchTrends2,
+      async fetchDailyKlines() {
+        return [];
+      },
+      async fetchTencentDayMinuteSeries() {
+        return new Map();
+      },
+    });
+
+    await provider.fetchTrends2("1.000001", 3);
+    const reused = await provider.fetchTrends2("1.000001", 2);
+
+    expect(fetchTrends2).toHaveBeenCalledTimes(1);
+    expect(reused).toEqual(["ndays=3"]);
   });
 });

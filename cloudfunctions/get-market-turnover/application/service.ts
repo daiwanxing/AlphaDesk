@@ -60,6 +60,41 @@ function defaultProvider(): TurnoverDataProvider {
   };
 }
 
+/** 单次 buildResponse 内复用上游结果；更大 limit/ndays 覆盖更小请求。 */
+export function memoizeTurnoverProvider(provider: TurnoverDataProvider): TurnoverDataProvider {
+  const klineBySecId = new Map<string, KlineBar[]>();
+  const trendsBySecId = new Map<string, { ndays: 2 | 3; lines: string[] }>();
+  const tencentBySecId = new Map<string, Map<string, CumulativeMinutePoint[]>>();
+
+  return {
+    async fetchDailyKlines(secId, limit = 10) {
+      const cached = klineBySecId.get(secId);
+      if (cached && cached.length >= limit) {
+        return cached.slice(-limit);
+      }
+      const bars = await provider.fetchDailyKlines(secId, limit);
+      klineBySecId.set(secId, bars);
+      return bars;
+    },
+    async fetchTrends2(secId, ndays) {
+      const cached = trendsBySecId.get(secId);
+      if (cached && cached.ndays >= ndays) {
+        return cached.lines;
+      }
+      const lines = await provider.fetchTrends2(secId, ndays);
+      trendsBySecId.set(secId, { ndays, lines });
+      return lines;
+    },
+    async fetchTencentDayMinuteSeries(secId) {
+      const cached = tencentBySecId.get(secId);
+      if (cached) return cached;
+      const series = await provider.fetchTencentDayMinuteSeries(secId);
+      tencentBySecId.set(secId, series);
+      return series;
+    },
+  };
+}
+
 function reportError(
   onError: TurnoverApplicationDependencies["onError"],
   scope: string,
@@ -84,28 +119,9 @@ function shanghaiHHmm(now: Date): string {
   return `${h}:${m}`;
 }
 
-function shanghaiAsOf(now: Date): string {
-  const shifted = new Date(now.getTime() + SHANGHAI_OFFSET_MS);
-  const y = shifted.getUTCFullYear();
-  const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(shifted.getUTCDate()).padStart(2, "0");
-  const h = String(shifted.getUTCHours()).padStart(2, "0");
-  const min = String(shifted.getUTCMinutes()).padStart(2, "0");
-  const s = String(shifted.getUTCSeconds()).padStart(2, "0");
-  return `${y}-${m}-${d}T${h}:${min}:${s}+08:00`;
-}
-
-/** 休市快照：asOf 取主序列交易日最后时刻，避免周末显示「正在更新」。 */
-function asOfForSeries(
-  session: MarketSession,
-  tradeDate: string,
-  lastT: string,
-  now: Date,
-): string {
-  if (isSnapshotSession(session) || session === "closed") {
-    return `${tradeDate}T${lastT}:00+08:00`;
-  }
-  return shanghaiAsOf(now);
+/** asOf 绑主序列最后有效分钟，盘中同分钟轮询保持稳定。 */
+function asOfForSeries(tradeDate: string, lastT: string): string {
+  return `${tradeDate}T${lastT}:00+08:00`;
 }
 
 function prevTradingDayYmd(fromYmd: string): string {
@@ -367,7 +383,7 @@ async function buildKlineSnapshotResponse(
 
   return {
     ok: true,
-    asOf: asOfForSeries(session, first.tradeDate, "15:00", now),
+    asOf: asOfForSeries(first.tradeDate, "15:00"),
     session,
     compareMode,
     disclaimer: hasSnapshotSeries ? disclaimerFor(compareMode) : klineOnlyDisclaimerFor(),
@@ -434,12 +450,14 @@ async function attachTurnoverInsight(
   provider: TurnoverDataProvider,
   repository: TurnoverRepository | null,
   onError: TurnoverApplicationDependencies["onError"],
+  seriesByMarket?: MarketDaySeries[],
 ): Promise<void> {
   try {
     const inputs = await assembleInsightInputs({
       tradeDate: response.series.tradeDate,
       provider,
       repository,
+      seriesByMarket,
       onError,
     });
 
@@ -462,10 +480,11 @@ async function attachTurnoverInsight(
 export function createTurnoverApplication(dependencies: TurnoverApplicationDependencies): {
   buildResponse(now: Date): Promise<MarketTurnoverResponse>;
 } {
-  const provider = dependencies.provider ?? defaultProvider();
+  const baseProvider = dependencies.provider ?? defaultProvider();
 
   return {
     async buildResponse(now) {
+      const provider = memoizeTurnoverProvider(baseProvider);
       const session = resolveMarketSession(now);
       const snapshotMode = isSnapshotSession(session);
       const todayYmd = shanghaiYmd(now);
@@ -656,7 +675,7 @@ export function createTurnoverApplication(dependencies: TurnoverApplicationDepen
 
       const response: MarketTurnoverResponse = {
         ok: true,
-        asOf: asOfForSeries(session, dates.tradeDate, lastToday.t, now),
+        asOf: asOfForSeries(dates.tradeDate, lastToday.t),
         session,
         compareMode,
         disclaimer: disclaimerFor(compareMode),
@@ -687,6 +706,7 @@ export function createTurnoverApplication(dependencies: TurnoverApplicationDepen
         provider,
         repository,
         dependencies.onError,
+        seriesByMarket,
       );
 
       return response;

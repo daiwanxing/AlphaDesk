@@ -58,7 +58,6 @@ function insightEqual(a: TurnoverInsight | undefined, b: TurnoverInsight | undef
     a.effectiveTime !== b.effectiveTime ||
     a.paceRatio !== b.paceRatio ||
     a.reason !== b.reason ||
-    a.asOf !== b.asOf ||
     a.actualFullDayAmount !== b.actualFullDayAmount ||
     a.projectedFullDayAmount !== b.projectedFullDayAmount
   ) {
@@ -95,7 +94,6 @@ export function turnoverDataEqual(
   if (a === b) return true;
   if (!a || !b) return false;
   if (
-    a.asOf !== b.asOf ||
     a.session !== b.session ||
     a.compareMode !== b.compareMode ||
     a.disclaimer !== b.disclaimer ||

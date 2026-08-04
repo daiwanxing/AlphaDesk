@@ -87,7 +87,7 @@ describe("turnover cache", () => {
     expect(readTurnoverCache()).toEqual(sample);
   });
 
-  it("compares asOf and amounts for probe skip", () => {
+  it("ignores asOf for probe skip; compares amounts", () => {
     expect(turnoverDataEqual(sample, { ...sample, markets: [...sample.markets] })).toBe(true);
     expect(
       turnoverDataEqual(sample, {
@@ -99,7 +99,7 @@ describe("turnover cache", () => {
         },
       }),
     ).toBe(true);
-    expect(turnoverDataEqual(sample, { ...sample, asOf: "other" })).toBe(false);
+    expect(turnoverDataEqual(sample, { ...sample, asOf: "other" })).toBe(true);
     expect(
       turnoverDataEqual(sample, {
         ...sample,
@@ -225,7 +225,7 @@ describe("turnover cache", () => {
         ...sampleWithInsight,
         turnoverInsight: { ...sampleInsight, asOf: "2026-08-01T14:31:00+08:00" },
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       turnoverDataEqual(sampleWithInsight, {
         ...sampleWithInsight,
