@@ -1,0 +1,7 @@
+{
+  "name": "get-sector-fund-flow",
+  "version": "1.0.0",
+  "description": "A股行业板块盘中资金流向 HTTP 接口",
+  "main": "index.js",
+  "dependencies": {}
+}

@@ -58,6 +58,19 @@
   &__asof {
     white-space: nowrap;
   }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  &__section-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-regular);
+    color: var(--muted);
+  }
 }
 
 %turnover-surface {

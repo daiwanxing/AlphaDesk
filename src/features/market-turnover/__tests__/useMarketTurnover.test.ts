@@ -18,7 +18,7 @@ vi.mock("../cache", () => ({
   turnoverDataEqual,
   writeTurnoverCache,
 }));
-vi.mock("../session", () => ({ resolveMarketSession }));
+vi.mock("@/shared/market/session", () => ({ resolveMarketSession }));
 vi.mock("@/shared/config/cloudbase", () => ({ cloudbaseApiBase }));
 
 const response: MarketTurnoverResponse = {

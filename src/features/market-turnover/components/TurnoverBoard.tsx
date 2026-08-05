@@ -1,4 +1,5 @@
 import { HandCoins } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { SECTION_TITLE_ICON } from "../icons";
 import { SESSION_META, TURNOVER_LABELS, deltaLabel } from "../labels";
@@ -25,6 +26,7 @@ type TurnoverBoardProps = {
   loading: boolean;
   error: string | null;
   configError: string | null;
+  children?: ReactNode;
 };
 
 function boardSubtitle(session: MarketSession): string {
@@ -61,15 +63,22 @@ function formatAsOf(value: string): string {
   return `${parts.year}-${parts.month}-${parts.day} ${weekday}`;
 }
 
-export function TurnoverBoard({ data, session, loading, error, configError }: TurnoverBoardProps) {
+export function TurnoverBoard({
+  data,
+  session,
+  loading,
+  error,
+  configError,
+  children,
+}: TurnoverBoardProps) {
   const showInitialSpinner = loading && !data;
 
   return (
     <div className="turnover-board">
-      <LoadingOverlay loading={showInitialSpinner} label="加载成交额…" />
+      <LoadingOverlay loading={showInitialSpinner} label="加载盘面…" />
       <header className="turnover-board__header">
         <div className="turnover-board__heading">
-          <h1 className="turnover-board__title">A股量能</h1>
+          <h1 className="turnover-board__title">A股盘面</h1>
           <p className="turnover-board__subtitle">{boardSubtitle(session)}</p>
         </div>
         <div className="turnover-board__meta">
@@ -91,7 +100,7 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
 
       {error && (
         <div className="note-box note-box--warn" role="alert">
-          <p className="note-box__title">数据更新失败</p>
+          <p className="note-box__title">量能更新失败</p>
           <p className="note-box__body">
             {error}
             {data ? " · 已保留上一帧数据" : ""}
@@ -99,7 +108,12 @@ export function TurnoverBoard({ data, session, loading, error, configError }: Tu
         </div>
       )}
 
-      {data && <TurnoverBody data={data} session={session} />}
+      <section className="turnover-board__section" aria-label="成交额量能">
+        <h2 className="turnover-board__section-title">成交额量能</h2>
+        {data && <TurnoverBody data={data} session={session} />}
+      </section>
+
+      {children}
     </div>
   );
 }
@@ -137,7 +151,7 @@ function TurnoverBody({ data, session }: { data: MarketTurnoverResponse; session
       <section className="turnover-panel">
         <h2 className="turnover-panel__title">
           <HandCoins {...SECTION_TITLE_ICON} />
-          市场成交额
+          累计成交额
         </h2>
         <IntradayTurnoverChart prev={prev} showPrev={showPrev} today={today} />
       </section>

@@ -18,10 +18,12 @@ const ULIST_HOSTS = ["https://push2delay.eastmoney.com", "https://push2.eastmone
 
 const KLINE_HOSTS = ["https://push2his.eastmoney.com", "https://push2delay.eastmoney.com"] as const;
 
+// push2 / push2delay 即使 ndays=3 也常只回当日；多日真源是 push2his。
+// SCF 出网对 push2/push2his 偶发 fetch failed，delay 相对可达，故 his 优先、delay 兜底。
 const TRENDS2_HOSTS = [
+  "https://push2his.eastmoney.com",
   "https://push2delay.eastmoney.com",
   "https://push2.eastmoney.com",
-  "https://push2his.eastmoney.com",
 ] as const;
 
 type UlistDiff = {
@@ -191,17 +193,29 @@ function parseTrends2Body(body: Trends2Body, secId: string, minimumDays: 1 | 2):
 
 export async function fetchTrends2(secId: string, ndays: 2 | 3): Promise<string[]> {
   const errors: string[] = [];
+  // 请求 ndays=3 时仍接受 ≥1 日：实时 host 常只给当日；多日靠 his，his 不通时至少能写今日 profile。
+  const minimumDays = 1;
+  let bestPartial: string[] | null = null;
 
   for (const host of TRENDS2_HOSTS) {
     const url = buildTrends2Url(host, secId, ndays);
     try {
       const body = await fetchJson<Trends2Body>(url, "Eastmoney");
-      return parseTrends2Body(body, secId, ndays === 3 ? 2 : 1);
+      const lines = parseTrends2Body(body, secId, minimumDays);
+      const days = new Set(lines.map((line) => line.slice(0, 10)));
+      if (ndays === 3 && days.size < 2) {
+        if (!bestPartial || lines.length > bestPartial.length) bestPartial = lines;
+        errors.push(`trends2 only ${days.size} day(s) from ${hostOf(url)}`);
+        continue;
+      }
+      return lines;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors.push(message);
     }
   }
+
+  if (bestPartial) return bestPartial;
 
   throw new Error(`Eastmoney trends2 all hosts failed for ${secId}: ${errors.join("; ")}`);
 }

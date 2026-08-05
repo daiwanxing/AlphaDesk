@@ -262,7 +262,7 @@ turnoverInsight → 前端只展示
 
 ### 4.2 历史快照（自建 profile）
 
-文档 ID：`turnover_profile_<YYYY-MM-DD>`，集合 `pipeline_meta`。至少包含：
+文档 ID：`turnover_profile_<YYYY-MM-DD>`，集合 `turnover_profiles`。至少包含：
 
 ```text
 tradeDate

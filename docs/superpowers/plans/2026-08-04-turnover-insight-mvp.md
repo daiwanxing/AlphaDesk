@@ -4,9 +4,9 @@
 
 **Goal:** 在现有量能看板上交付确定性「量能状态 + 全天区间」：自建 profile 为长期真源，冷启动用日 K 尺度 × 短窗口形状 bootstrap，首日即可用。
 
-**Architecture:** 纯函数在 `domain/turnover-insight.ts` 算 `paceRatio` / 区间 / 状态；`pipeline_meta` 存每日 `turnover_profile_<date>`；`get-market-turnover` 组装可选 `turnoverInsight`（失败不挡基础响应）；新 event 函数 `refresh-turnover-profiles` 收盘写入 + 种子；前端在 KPI 与分时图之间渲染面板。
+**Architecture:** 纯函数在 `domain/turnover-insight.ts` 算 `paceRatio` / 区间 / 状态；`turnover_profiles` 存每日 `turnover_profile_<date>`；`get-market-turnover` 组装可选 `turnoverInsight`（失败不挡基础响应）；新 event 函数 `refresh-turnover-profiles` 收盘写入 + 种子；前端在 KPI 与分时图之间渲染面板。
 
-**Tech Stack:** 现有 TypeScript 云函数 + Vitest；`@contracts/market-turnover`；React 看板；CloudBase `pipeline_meta`；东财/腾讯（不接 Tushare）。
+**Tech Stack:** 现有 TypeScript 云函数 + Vitest；`@contracts/market-turnover`；React 看板；CloudBase `turnover_profiles` + `pipeline_meta`；东财/腾讯（不接 Tushare）。
 
 **Spec:** `docs/superpowers/specs/2026-08-03-turnover-insight-design.md`
 
@@ -266,16 +266,12 @@ deleteTurnoverProfilesBefore(tradeDate: string): Promise<number>;
 文档 `_id = turnover_profile_${tradeDate}`。`list` 使用：
 
 ```ts
-db.collection("pipeline_meta")
-  .where({ docType: "turnover_profile" })
-  .orderBy("tradeDate", "desc")
-  .limit(limit)
-  .get();
+db.collection("turnover_profiles").orderBy("tradeDate", "desc").limit(limit).get();
 ```
 
-**部署注意：** CloudBase 控制台需为 `pipeline_meta` 建 `docType` + `tradeDate` 复合索引，否则 list 会运行时报错。在 Task 6 README/注释与手验清单写明。
+**部署注意：** CloudBase 控制台需为 `turnover_profiles` 建 `tradeDate` 降序索引，否则 list 会运行时报错。在 Task 6 README/注释与手验清单写明。
 
-（若测试用 mock DB 尚无 `where`，扩展 mock 接口。）`deleteTurnoverProfilesBefore`：list 后过滤 `tradeDate < cutoff` 逐条删除；单测用内存 mock。
+`deleteTurnoverProfilesBefore`：list 后过滤 `tradeDate < cutoff` 逐条删除；单测用内存 mock。
 
 - [ ] **Step 2: 单测覆盖 load miss / save 幂等 / list 排序 / delete 计数**
 
@@ -498,7 +494,7 @@ Result (2026-08-04): **146 tests passed** across 21 files. (`cf:typecheck` 仍�
 2. 手动触发 `refresh-turnover-profiles` seed：写入近几日 profile
 3. insight 失败不影响 KPI/分时图
 4. 旧前端缓存无 insight 字段仍正常
-5. CloudBase：`pipeline_meta` 上 `docType` + `tradeDate` 复合索引已建，list 不报错
+5. CloudBase：`turnover_profiles` 上 `tradeDate` 降序索引已建，list 不报错
 6. 控制台配置工作日 15:10 Asia/Shanghai 定时
 
 - [ ] **Step 3: Commit**（仅用户要求时）

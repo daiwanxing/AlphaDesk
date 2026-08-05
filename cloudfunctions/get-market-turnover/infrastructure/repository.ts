@@ -31,9 +31,13 @@ type TurnoverQuery = {
 export type TurnoverDatabase = {
   collection(name: string): {
     doc(id: string): TurnoverDocument;
-    where(filter: Record<string, unknown>): TurnoverQuery;
+    orderBy(field: string, direction: "asc" | "desc"): TurnoverQuery;
   };
 };
+
+/** 每日收盘量能 profile；与 pipeline_meta 运维缓存分离。 */
+const TURNOVER_PROFILES = "turnover_profiles";
+const PIPELINE_META = "pipeline_meta";
 
 export type TurnoverRepository = {
   loadTurnoverMeta(): Promise<TurnoverMeta>;
@@ -60,14 +64,14 @@ export function createTurnoverRepository(
 ): TurnoverRepository {
   return {
     async loadTurnoverMeta() {
-      const res = await db.collection("pipeline_meta").doc("turnover").get();
+      const res = await db.collection(PIPELINE_META).doc("turnover").get();
       const rows = (res.data ?? []) as TurnoverMeta[];
       return rows[0] ?? { _id: "turnover", prevBySecId: {}, updatedAt: "" };
     },
 
     async saveTurnoverMeta(prevBySecId) {
       await db
-        .collection("pipeline_meta")
+        .collection(PIPELINE_META)
         .doc("turnover")
         .set({
           _id: "turnover",
@@ -77,7 +81,7 @@ export function createTurnoverRepository(
     },
 
     async loadIntradayPrev() {
-      const res = await db.collection("pipeline_meta").doc("turnover_intraday_prev").get();
+      const res = await db.collection(PIPELINE_META).doc("turnover_intraday_prev").get();
       const rows = (res.data ?? []) as IntradayPrevDoc[];
       const doc = rows[0];
       if (!doc?.prevTradeDate || !Array.isArray(doc.points) || doc.points.length === 0) {
@@ -88,7 +92,7 @@ export function createTurnoverRepository(
 
     async saveIntradayPrev(prevTradeDate, points) {
       await db
-        .collection("pipeline_meta")
+        .collection(PIPELINE_META)
         .doc("turnover_intraday_prev")
         .set({
           _id: "turnover_intraday_prev",
@@ -99,26 +103,23 @@ export function createTurnoverRepository(
     },
 
     async loadTurnoverProfile(tradeDate) {
-      const res = await db.collection("pipeline_meta").doc(turnoverProfileId(tradeDate)).get();
+      const res = await db.collection(TURNOVER_PROFILES).doc(turnoverProfileId(tradeDate)).get();
       const rows = (res.data ?? []) as TurnoverProfileDoc[];
       return rows[0] ?? null;
     },
 
     async saveTurnoverProfile(profile) {
       const id = turnoverProfileId(profile.tradeDate);
+      // doc(id).set 已绑定 _id；payload 再带 _id 会报「不能更新_id的值」
       await db
-        .collection("pipeline_meta")
+        .collection(TURNOVER_PROFILES)
         .doc(id)
-        .set({
-          _id: id,
-          ...profile,
-        });
+        .set({ ...profile });
     },
 
     async listTurnoverProfiles(limit) {
       const res = await db
-        .collection("pipeline_meta")
-        .where({ docType: "turnover_profile" })
+        .collection(TURNOVER_PROFILES)
         .orderBy("tradeDate", "desc")
         .limit(limit)
         .get();
@@ -127,8 +128,7 @@ export function createTurnoverRepository(
 
     async deleteTurnoverProfilesBefore(tradeDate) {
       const profiles = await db
-        .collection("pipeline_meta")
-        .where({ docType: "turnover_profile" })
+        .collection(TURNOVER_PROFILES)
         .orderBy("tradeDate", "desc")
         .limit(1000)
         .get();
@@ -138,7 +138,7 @@ export function createTurnoverRepository(
 
       await Promise.all(
         toDelete.map((profile) =>
-          db.collection("pipeline_meta").doc(turnoverProfileId(profile.tradeDate)).remove(),
+          db.collection(TURNOVER_PROFILES).doc(turnoverProfileId(profile.tradeDate)).remove(),
         ),
       );
 

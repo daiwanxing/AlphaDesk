@@ -1,6 +1,6 @@
 import type { BriefsResponse } from "@contracts/briefs";
 import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
-import { parseJson } from "./http";
+import { parseJson } from "../http";
 
 export type { BriefsResponse } from "@contracts/briefs";
 

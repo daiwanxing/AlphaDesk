@@ -6,6 +6,7 @@ const CURRENT_FUNCTIONS = [
   "get-events",
   "get-briefs",
   "get-market-turnover",
+  "get-sector-fund-flow",
   "trigger-backfill",
   "refresh-turnover-profiles",
 ];
@@ -15,7 +16,13 @@ describe("cloud function manifest", () => {
     const manifest = loadFunctionManifest();
 
     expect(validateFunctionManifest(manifest, CURRENT_FUNCTIONS)).toEqual({
-      http: ["get-events", "get-briefs", "get-market-turnover", "trigger-backfill"],
+      http: [
+        "get-events",
+        "get-briefs",
+        "get-market-turnover",
+        "get-sector-fund-flow",
+        "trigger-backfill",
+      ],
       event: ["detect-new-materials", "generate-brief", "refresh-turnover-profiles"],
     });
   });

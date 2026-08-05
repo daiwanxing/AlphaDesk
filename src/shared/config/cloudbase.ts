@@ -4,6 +4,7 @@ export const CLOUDBASE_PATHS = {
   briefs: "/get-briefs",
   backfill: "/trigger-backfill",
   turnover: "/get-market-turnover",
+  sectorFundFlow: "/get-sector-fund-flow",
 } as const;
 
 /** 本地同源代理前缀或生产网关 origin，见 VITE_CLOUDBASE_API_BASE */

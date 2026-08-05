@@ -32,7 +32,7 @@ function createMemoryDatabase(): {
 } {
   const documents = new Map<string, unknown>();
 
-  function buildQuery(collectionName: string, filter: Record<string, unknown>) {
+  function buildQuery(collectionName: string) {
     let orderField: string | undefined;
     let orderDirection: "asc" | "desc" = "asc";
     let maxResults = Number.POSITIVE_INFINITY;
@@ -51,10 +51,7 @@ function createMemoryDatabase(): {
         const prefix = `${collectionName}/`;
         const rows = [...documents.entries()]
           .filter(([key]) => key.startsWith(prefix))
-          .map(([, value]) => value as Record<string, unknown>)
-          .filter((doc) =>
-            Object.entries(filter).every(([field, expected]) => doc[field] === expected),
-          );
+          .map(([, value]) => value as Record<string, unknown>);
 
         if (orderField) {
           rows.sort((left, right) => {
@@ -83,15 +80,15 @@ function createMemoryDatabase(): {
               return { data: value === undefined ? [] : [value] };
             },
             async set(value) {
-              documents.set(key, value);
+              documents.set(key, { ...(value as Record<string, unknown>), _id: id });
             },
             async remove() {
               documents.delete(key);
             },
           };
         },
-        where(filter) {
-          return buildQuery(name, filter);
+        orderBy(field, direction) {
+          return buildQuery(name).orderBy(field, direction);
         },
       };
     },
@@ -156,7 +153,7 @@ describe("turnover repository", () => {
     await repository.saveTurnoverProfile(profile);
     await repository.saveTurnoverProfile({ ...profile, generatedAt: "2026-08-03T01:00:00.000Z" });
 
-    expect(documents.get("pipeline_meta/turnover_profile_2026-08-01")).toEqual({
+    expect(documents.get("turnover_profiles/turnover_profile_2026-08-01")).toEqual({
       _id: "turnover_profile_2026-08-01",
       ...profile,
       generatedAt: "2026-08-03T01:00:00.000Z",
@@ -192,8 +189,8 @@ describe("turnover repository", () => {
 
     await expect(repository.deleteTurnoverProfilesBefore("2026-08-03")).resolves.toBe(2);
 
-    expect(documents.has("pipeline_meta/turnover_profile_2026-08-01")).toBe(false);
-    expect(documents.has("pipeline_meta/turnover_profile_2026-08-02")).toBe(false);
-    expect(documents.has("pipeline_meta/turnover_profile_2026-08-03")).toBe(true);
+    expect(documents.has("turnover_profiles/turnover_profile_2026-08-01")).toBe(false);
+    expect(documents.has("turnover_profiles/turnover_profile_2026-08-02")).toBe(false);
+    expect(documents.has("turnover_profiles/turnover_profile_2026-08-03")).toBe(true);
   });
 });

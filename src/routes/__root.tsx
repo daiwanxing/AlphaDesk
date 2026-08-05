@@ -105,7 +105,7 @@ function RootLayout() {
             </Link>
             <Link to="/turnover" className={clsx("nav-item", turnoverActive && "is-active")}>
               <ChartNoAxesCombined {...iconProps} />
-              <span>A股量能</span>
+              <span>A股盘面</span>
             </Link>
             <button type="button" className="nav-item" disabled>
               <ChartCandlestick {...iconProps} />

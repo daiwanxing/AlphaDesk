@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveMarketSession } from "../session";
+import { resolveMarketSession } from "@/shared/market/session";
 
 /** Fixed Beijing wall-clock instant (independent of host TZ). */
 function beijing(y: number, m: number, d: number, h: number, min = 0): Date {

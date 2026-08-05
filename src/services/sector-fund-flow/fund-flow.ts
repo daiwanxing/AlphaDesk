@@ -1,14 +1,14 @@
-import type { MarketTurnoverResponse } from "@contracts/market-turnover";
+import type { SectorFundFlowResponse } from "@contracts/sector-fund-flow";
 import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
 import { parseJson } from "../http";
 
-export async function fetchMarketTurnover(options?: {
+export async function fetchSectorFundFlow(options?: {
   signal?: AbortSignal;
-}): Promise<MarketTurnoverResponse> {
-  const url = cloudbaseUrl(CLOUDBASE_PATHS.turnover);
+}): Promise<SectorFundFlowResponse> {
+  const url = cloudbaseUrl(CLOUDBASE_PATHS.sectorFundFlow);
   if (!url) {
     throw new Error("VITE_CLOUDBASE_API_BASE is not set");
   }
   const res = await fetch(url, { signal: options?.signal });
-  return parseJson<MarketTurnoverResponse>(res);
+  return parseJson<SectorFundFlowResponse>(res);
 }

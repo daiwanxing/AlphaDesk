@@ -1,71 +1,58 @@
 import { useEffect, useRef } from "react";
+import type { SectorFundFlowSeries } from "@contracts/sector-fund-flow";
 import { echarts, type EChartsOption } from "@/shared/charts/echarts";
 import { A_SHARE_TRADING_MINUTES, alignSeriesToAxis } from "@/shared/market/trading-axis";
-import { formatAmountYi, formatAmountYuan } from "../format";
-import { TURNOVER_LABELS } from "../labels";
-import type { TurnoverPoint } from "@contracts/market-turnover";
+import { formatNetInflowYi, formatNetInflowYiAxis } from "../format";
 
 type ChartInstance = ReturnType<typeof echarts.init>;
 
 const AXIS_TICKS = new Set(["09:30", "10:30", "11:30", "14:00", "15:00"]);
 
-const LEGEND_PRIMARY = TURNOVER_LABELS.primary;
-const LEGEND_PREV = TURNOVER_LABELS.chartPrev;
+/** Terminal-safe multi-series palette (no purple rainbow). */
+const SERIES_COLORS = [
+  "#0265ff",
+  "#F99911",
+  "#0f9d58",
+  "#d93025",
+  "#5f6368",
+  "#00897b",
+  "#c2185b",
+  "#5c6bc0",
+];
 
 type ChartTheme = {
-  today: string;
-  prev: string;
   axis: string;
   split: string;
+  zero: string;
 };
 
 function readTheme(host: HTMLElement): ChartTheme {
   const style = getComputedStyle(host);
   const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-
   return {
-    today: token("--chart-today", "#0265ff"),
-    prev: token("--chart-prev", "#F99911"),
     axis: token("--chart-axis", "#9ca3af"),
     split: token("--chart-split", "#f0f1f3"),
+    zero: token("--border", "#e5e7eb"),
   };
 }
 
-function todayAreaGradient(lineColor: string) {
-  return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-    { offset: 0, color: withAlpha(lineColor, 0.14) },
-    { offset: 1, color: withAlpha(lineColor, 0) },
-  ]);
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const raw = hex.replace("#", "");
-  if (raw.length !== 6) return `rgba(2, 101, 255, ${alpha})`;
-  const r = Number.parseInt(raw.slice(0, 2), 16);
-  const g = Number.parseInt(raw.slice(2, 4), 16);
-  const b = Number.parseInt(raw.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 type Props = {
-  today: TurnoverPoint[];
-  prev: TurnoverPoint[];
-  showPrev: boolean;
+  sectors: SectorFundFlowSeries[];
 };
 
-function buildOption(theme: ChartTheme, { today, prev, showPrev }: Props): EChartsOption {
+function buildOption(theme: ChartTheme, sectors: SectorFundFlowSeries[]): EChartsOption {
   return {
-    color: [theme.today, theme.prev],
-    grid: { top: 36, right: 16, bottom: 28, left: 64 },
+    color: SERIES_COLORS,
+    grid: { top: 36, right: 12, bottom: 28, left: 56 },
     legend: {
       top: 0,
-      right: 0,
+      type: "scroll",
       icon: "roundRect",
-      itemWidth: 14,
+      itemWidth: 12,
       itemHeight: 3,
-      itemGap: 16,
-      textStyle: { color: theme.axis, fontSize: 12 },
-      data: showPrev ? [LEGEND_PRIMARY, LEGEND_PREV] : [LEGEND_PRIMARY],
+      itemGap: 12,
+      textStyle: { color: theme.axis, fontSize: 11 },
+      data: sectors.map((s) => s.name),
     },
     tooltip: {
       trigger: "axis",
@@ -78,7 +65,7 @@ function buildOption(theme: ChartTheme, { today, prev, showPrev }: Props): EChar
         type: "line",
         lineStyle: { color: "#d1d5db", width: 1 },
       },
-      valueFormatter: (value) => (value == null ? "—" : formatAmountYuan(Number(value))),
+      valueFormatter: (value) => (value == null ? "—" : formatNetInflowYi(Number(value))),
     },
     xAxis: {
       type: "category",
@@ -102,36 +89,32 @@ function buildOption(theme: ChartTheme, { today, prev, showPrev }: Props): EChar
       axisLabel: {
         color: theme.axis,
         fontSize: 11,
-        formatter: (value: number) => formatAmountYi(value),
+        formatter: (value: number) => formatNetInflowYiAxis(value),
       },
     },
-    series: [
-      {
-        type: "line",
-        name: LEGEND_PRIMARY,
-        data: alignSeriesToAxis(A_SHARE_TRADING_MINUTES, today),
-        showSymbol: false,
-        connectNulls: true,
-        smooth: true,
-        areaStyle: { color: todayAreaGradient(theme.today) },
-        lineStyle: { color: theme.today, width: 2 },
-        itemStyle: { color: theme.today },
-      },
-      {
-        type: "line",
-        name: LEGEND_PREV,
-        data: showPrev ? alignSeriesToAxis(A_SHARE_TRADING_MINUTES, prev) : [],
-        showSymbol: false,
-        connectNulls: true,
-        smooth: true,
-        lineStyle: { color: theme.prev, width: 1.5 },
-        itemStyle: { color: theme.prev },
-      },
-    ],
+    series: sectors.map((sector) => ({
+      name: sector.name,
+      type: "line" as const,
+      showSymbol: false,
+      connectNulls: true,
+      smooth: false,
+      lineStyle: { width: 1.5 },
+      data: alignSeriesToAxis(A_SHARE_TRADING_MINUTES, sector.points),
+      markLine:
+        sector === sectors[0]
+          ? {
+              silent: true,
+              symbol: "none",
+              label: { show: false },
+              lineStyle: { color: theme.zero, type: "dashed", width: 1 },
+              data: [{ yAxis: 0 }],
+            }
+          : undefined,
+    })),
   };
 }
 
-export function IntradayTurnoverChart({ today, prev, showPrev }: Props) {
+export function SectorFundFlowChart({ sectors }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ChartInstance | null>(null);
 
@@ -139,7 +122,7 @@ export function IntradayTurnoverChart({ today, prev, showPrev }: Props) {
     const host = hostRef.current;
     if (!host) return;
 
-    const chart = echarts.init(host);
+    const chart = echarts.init(host, undefined, { renderer: "canvas" });
     chartRef.current = chart;
 
     let lastW = host.clientWidth;
@@ -169,10 +152,10 @@ export function IntradayTurnoverChart({ today, prev, showPrev }: Props) {
     const host = hostRef.current;
     const chart = chartRef.current;
     if (!host || !chart) return;
-    chart.setOption(buildOption(readTheme(host), { today, prev, showPrev }), { notMerge: true });
-  }, [prev, showPrev, today]);
+    chart.setOption(buildOption(readTheme(host), sectors), { notMerge: true });
+  }, [sectors]);
 
   return (
-    <div className="turnover-chart" ref={hostRef} role="img" aria-label="沪深京合计分时成交额" />
+    <div ref={hostRef} className="sector-flow__chart" role="img" aria-label="板块资金分时图" />
   );
 }

@@ -1,0 +1,28 @@
+.sector-flow {
+  --chart-split: #f0f1f3;
+  --chart-axis: #9ca3af;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+
+  &__panel {
+    min-inline-size: 0;
+  }
+
+  &__empty {
+    margin: 0;
+    padding-block: var(--space-6);
+    text-align: center;
+  }
+
+  &__chart {
+    inline-size: 100%;
+    block-size: 280px;
+
+    @container turnover (min-width: 720px) {
+      block-size: 360px;
+    }
+  }
+}

@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("fetchTrends2", () => {
-  it("skips non-empty single-day responses and uses a host with historical coverage", async () => {
+  it("prefers push2his multi-day coverage on the first successful host", async () => {
     const fetchMock = vi.fn(async (input: unknown) => {
       const url = String(input);
       const trends = url.includes("push2his")
@@ -28,8 +28,26 @@ describe("fetchTrends2", () => {
       trendsLine("2026-08-03"),
     ]);
 
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("push2his.eastmoney.com");
+  });
+
+  it("falls back to a single-day realtime host when history is unreachable", async () => {
+    const today = trendsLine("2026-08-04");
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url.includes("push2his")) {
+        throw new TypeError("fetch failed");
+      }
+      return new Response(JSON.stringify({ rc: 0, data: { trends: [today] } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchTrends2("1.000001", 3)).resolves.toEqual([today]);
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(String(fetchMock.mock.calls[2]?.[0])).toContain("push2his.eastmoney.com");
   });
 
   it("accepts a single current day for the live two-day request", async () => {

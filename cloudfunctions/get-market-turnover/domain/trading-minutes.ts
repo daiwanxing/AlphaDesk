@@ -1,5 +1,5 @@
 /** A 股交易分钟轴（09:30–11:30、13:00–15:00，含端点）。
- * 与前端 `src/features/market-turnover/trading-axis.ts` 保持同一口径，改动需同步两侧。
+ * 与前端 `src/shared/market/trading-axis.ts` 保持同一口径，改动需同步两侧。
  */
 
 function pad2(n: number): string {

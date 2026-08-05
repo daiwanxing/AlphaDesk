@@ -1,6 +1,6 @@
 import type { EventDetailResponse, TimelineResponse } from "@contracts/event-track";
 import { CLOUDBASE_PATHS, cloudbaseUrl } from "@/shared/config/cloudbase";
-import { parseJson } from "./http";
+import { parseJson } from "../http";
 
 function eventsBase(): string {
   return cloudbaseUrl(CLOUDBASE_PATHS.events) ?? "";

@@ -6,7 +6,7 @@ import {
   turnoverDataEqual,
   writeTurnoverCache,
 } from "./cache";
-import { resolveMarketSession } from "./session";
+import { resolveMarketSession } from "@/shared/market/session";
 import type { MarketSession, MarketTurnoverResponse } from "@contracts/market-turnover";
 import { cloudbaseApiBase } from "@/shared/config/cloudbase";
 

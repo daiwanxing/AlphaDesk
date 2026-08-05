@@ -3,7 +3,7 @@
  *
  * 部署人工步骤（部署脚本不会自动创建）：
  * 1. CloudBase 控制台为本函数配置定时触发器：工作日 15:10 Asia/Shanghai（cron `0 10 15 * * MON-FRI`）。
- * 2. `pipeline_meta` 集合需建 `docType` + `tradeDate` 复合索引，否则 `listTurnoverProfiles` 运行时报错。
+ * 2. 集合 `turnover_profiles` 需建 `tradeDate` 降序索引，否则 `listTurnoverProfiles` 运行时报错。
  *
  * 只由定时触发或手工 `{ mode: "seed" }` 调用；HTTP 轮询路径不得调用本函数。
  */
