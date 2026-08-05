@@ -186,11 +186,11 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 #### 3.1.1 检测节奏：窗口加密 + 日常兜底（已定）
 
-| 模式                  | 何时进入                                     | 行为                                                  |
-| --------------------- | -------------------------------------------- | ----------------------------------------------------- |
-| **加密（dense）**     | 存在「活跃窗口」内的事件（见下表）           | 本轮完整检测相关 ticker / FOMC 材料；发现新材料即入队 |
-| **日常兜底（daily）** | 无活跃窗口，且距上次成功兜底 ≥ **12～24h**   | 轻量全量扫当年一次，补日程漂移与漏检                  |
-| **空退出（idle）**    | 无活跃窗口，且日常兜底未到期，且无待重试信号 | **立即返回**，不打外部数据源                          |
+| 模式                  | 何时进入                                                                     | 行为                                                  |
+| --------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **加密（dense）**     | 存在「活跃窗口」内的事件（见下表）                                           | 本轮完整检测相关 ticker / FOMC 材料；发现新材料即入队 |
+| **日常兜底（daily）** | 无活跃窗口，且距上次成功兜底 ≥ **约 7 天**（`DETECT_DAILY_HOURS`，默认 168） | 轻量全量扫**当前年**一次，补日程漂移与漏检            |
+| **空退出（idle）**    | 无活跃窗口，且日常兜底未到期，且无待重试信号                                 | **立即返回**，不打外部数据源                          |
 
 **活跃窗口定义（相对「今天」）：**
 
@@ -203,14 +203,14 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 **停止加密：** 该 `eventId+slot` 已 `ready`（或 SEP `not_applicable`）→ 不再因该槽位保持 dense。
 
-> Timer 仍可 30min 触发一次，但 **idle 轮次成本应接近 0**（只读库算窗口 + return）。真正的外部拉取集中在 dense / daily。
+> Timer 仍可 30min 触发一次，但 **idle 轮次成本应接近 0**（只读库算窗口 + return）。真正的外部拉取集中在 dense / daily。日程快照默认缓存约 **7 天**（`DETECT_SCHEDULE_CACHE_MS`）。日常只跑**当前年**；历史年仅走手动 `trigger-backfill`。
 
 ### 3.2 `generate-brief`（Event；可 Timer + 被 invoke）
 
 | 项              | 内容                                                                                                                                                                                                                                                               |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **类型**        | Event Function                                                                                                                                                                                                                                                     |
-| **触发**        | ① `detect-new-materials` 入队后 **立即 invoke**（主路径）；② Timer 每 **10～15 分钟**扫队列（仅消费 `queued` / 到期重试；**无 job 则空退出**）                                                                                                                     |
+| **触发**        | ① `detect-new-materials` 入队后 **立即 invoke**（主路径）；② Timer 每 **1 小时**扫队列（`generate-queue-1h`：`0 0 */1 * * * *`；仅消费 `queued` / 到期重试；**无 job 则空退出**）                                                                                  |
 | **输入**        | 可选指定 `jobId`；否则领取 `status=queued` 且 `nextRunAt <= now` 的 N 条（建议 N=1～2，防超时）                                                                                                                                                                    |
 | **职责**        | 1）原子 claim（queued→processing + lock）2）抓取原文（HTML/PDF→文本）3）按 `slot` 选 prompt 4）`@cloudbase/node-sdk` AI `generateText` 5）解析为 `sections` 6）写 `briefs`=`ready`，job=`succeeded` 7）失败：attempts++、指数退避写 `nextRunAt`、`briefs`=`failed` |
 | **不做**        | 不对外暴露；不扫描全市场；无待处理 job 时不调 LLM                                                                                                                                                                                                                  |
@@ -234,14 +234,14 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 
 ### 3.5 函数一览
 
-| 函数名                 | 模型  | 触发                                 | 写库                   | 调 LLM              |
-| ---------------------- | ----- | ------------------------------------ | ---------------------- | ------------------- |
-| `detect-new-materials` | Event | Timer 30min（内部 dense/daily/idle） | jobs, briefs(状态)     | 否                  |
-| `generate-brief`       | Event | invoke 为主 + Timer 扫队列           | jobs, briefs, source_* | **是**（有 job 时） |
-| `get-events`           | HTTP  | 浏览器/前端                          | 否                     | 否                  |
-| `get-briefs`           | HTTP  | 浏览器/前端                          | 否                     | 否                  |
-| `trigger-backfill`     | HTTP  | 前端切历史年（鉴权）                 | 否（invoke detect）    | 否                  |
-| `admin-requeue`        | Event | 手动                                 | jobs                   | 否                  |
+| 函数名                 | 模型  | 触发                                             | 写库                   | 调 LLM              |
+| ---------------------- | ----- | ------------------------------------------------ | ---------------------- | ------------------- |
+| `detect-new-materials` | Event | Timer 30min（内部 dense / 约 7 天 daily / idle） | jobs, briefs(状态)     | 否                  |
+| `generate-brief`       | Event | invoke 为主 + Timer 1h 扫队列                    | jobs, briefs, source_* | **是**（有 job 时） |
+| `get-events`           | HTTP  | 浏览器/前端                                      | 否                     | 否                  |
+| `get-briefs`           | HTTP  | 浏览器/前端                                      | 否                     | 否                  |
+| `trigger-backfill`     | HTTP  | 前端切历史年（鉴权）                             | 否（invoke detect）    | 否                  |
+| `admin-requeue`        | Event | 手动                                             | jobs                   | 否                  |
 
 ---
 
@@ -356,3 +356,4 @@ CloudBase：**Timer → Event Function**；对外读：**HTTP Function**（浏�
 | 2026-07-30 | 审阅修订：状态合并契约、eventId 对齐、失败耗尽态、槽位补全、年份 backfill、section id、锁过期 |
 | 2026-07-31 | **检测节奏改为窗口加密 + 日常兜底**（§3.1.1）；否定全年无差别高频爬取                         |
 | 2026-08-01 | **全栈迁 CloudBase**：静态托管前端 + HTTP `get-events`；移除 Vercel 部署边界                  |
+| 2026-08-05 | **节奏调优**：daily/日程缓存默认约 7 天；`generate-brief` Timer 改为 1h（invoke 为主）        |

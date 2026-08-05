@@ -363,9 +363,9 @@ Expected: 中文标准块齐全。已验证：`earnings-GOOGL-000165204426000071
 > Timer **每 30 分钟唤醒一次**，函数内部按窗口算 `dense` / `daily` / `idle`：
 >
 > - **dense**（临近披露/会议窗口内）：本轮扫相关材料，发现缺口则入队并 `callFunction('generate-brief')`
-> - **daily**（无活跃窗口且距上次兜底 ≥12～24h）：轻量全量补漏
+> - **daily**（无活跃窗口且距上次兜底 ≥约 7 天）：轻量全量补漏当前年；日程缓存同约 7 天
 > - **idle**：几乎立刻空退出，**不**打 SEC/Fed  
->   因此不是「每一条披露事件立刻单独触发一次定时任务」，而是「定时醒来 → 窗口内尽快发现 → 入队生成」。窗口外靠 daily 兜底，可能有数小时延迟。待披露 `earnings-pending-*` **永不**入队。
+>   因此不是「每一条披露事件立刻单独触发一次定时任务」，而是「定时醒来 → 窗口内尽快发现 → 入队生成」。窗口外靠 weekly daily 兜底。待披露 `earnings-pending-*` **永不**入队。历史年不自动扫。
 
 **Files:**
 
@@ -409,7 +409,7 @@ Expected：对已披露且无 brief 的事件入队。已验证：`enqueued: 25`
 - Modify: `src/routes/index.tsx` — 年份 `<select>` / 切换时调用（详情页只读 `search.year`，backfill 挂在时间线切年）
 - Modify: `.env.example` — 增加 `VITE_CLOUDBASE_BACKFILL_URL`、`VITE_BRIEF_API_KEY`（浏览器可见，仅单用户可接受）
 
-- [x] **Step 1: 为 `generate-brief` 配 Timer 12min**（`generate-queue-12m`：`0 */12 * * * * *`；无 job 空退出）
+- [x] **Step 1: 为 `generate-brief` 配稀有重试 Timer 1h**（现行 `generate-queue-1h`：`0 0 */1 * * * *`；无 job 空退出。主路径仍是 detect 入队后 invoke；勿再配 1min/12min 空转）
 
 - [x] **Step 2: `detect-new-materials` 支持入参 `{ year, mode: "backfill" }`**（Task 7 已支持；忽略窗口、全年缺口入队）
 

@@ -1,6 +1,6 @@
 /**
  * 与 server/lib/detect-windows.ts 保持同步（改一处须改另一处）
- * AI 解读检测节奏（设计 §3.1.1）
+ * AI 解读检测节奏（设计 §3.1.1）：窗口加密 + 约周级日常兜底
  */
 
 export type DetectMode = "dense" | "daily" | "idle" | "backfill";

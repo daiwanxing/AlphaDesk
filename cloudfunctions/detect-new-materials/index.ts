@@ -1,3 +1,12 @@
+/**
+ * Event Function：窗口检测 → 入队 → 唤醒 generate-brief。
+ *
+ * 节奏（日常只跑当前年；历史年走 trigger-backfill）：
+ * - Timer 仍可每 30min 唤醒；窗外无周兜底到期时 idle 早退，不打 SEC/Fed
+ * - 日程一年基本固定：默认约 7 天刷新一次（DETECT_SCHEDULE_CACHE_MS）
+ * - 无活跃窗口时的日常全量兜底：默认约 7 天一次（DETECT_DAILY_HOURS）
+ * - 加密窗内 dense：及时发现新披露并入队；有 job 才 invoke generate-brief
+ */
 import cloudbase from "@cloudbase/node-sdk";
 import { resolveDetectMode, type DetectMode } from "./detect-windows";
 import {
@@ -12,9 +21,11 @@ import {
 
 const ENV_ID = process.env.TCB_ENV || process.env.SCF_NAMESPACE || "trader-d4gl4d7a1cb6baebb";
 
-const DAILY_INTERVAL_HOURS = Number(process.env.DETECT_DAILY_HOURS || 18);
+/** 无活跃窗口时，距上次 daily 兜底多久再扫当年（默认 7 天）。 */
+const DAILY_INTERVAL_HOURS = Number(process.env.DETECT_DAILY_HOURS || 168);
+/** 日程快照缓存 TTL（默认 7 天）；可用 env 覆盖。 */
 const SCHEDULE_CACHE_MAX_AGE_MS = Number(
-  process.env.DETECT_SCHEDULE_CACHE_MS || 6 * 60 * 60 * 1000,
+  process.env.DETECT_SCHEDULE_CACHE_MS || 7 * 24 * 60 * 60 * 1000,
 );
 const MAX_ENQUEUE = Number(process.env.DETECT_MAX_ENQUEUE || 25);
 
